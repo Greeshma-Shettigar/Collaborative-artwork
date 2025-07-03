@@ -1,0 +1,245 @@
+import React, { useState } from "react";
+import {
+  FaPencilAlt,
+  FaFillDrip,
+  FaEraser,
+  FaFont,
+  FaDownload,
+  FaUndo,
+  FaRedo,
+  FaPaintBrush,
+  FaArrowRight,
+  FaArrowLeft,
+  FaArrowUp,
+  FaArrowDown,
+  FaStar,
+} from "react-icons/fa";
+import {
+  TbCircle,
+  TbRectangle,
+  TbHexagon,
+  TbTriangle,
+  TbDiamond,
+  TbPentagon,
+  TbPolygon,
+  TbLine,
+} from "react-icons/tb";
+import { IoShapesOutline } from "react-icons/io5";
+
+const brushTypes = [
+  { name: "Normal Brush", icon: "🖌" },
+  { name: "Calligraphy", icon: "✒" },
+  { name: "Airbrush", icon: "💨" },
+  { name: "Marker", icon: "🖍" },
+  { name: "Oil", icon: "🛢" },
+  { name: "Watercolor", icon: "💧" },
+  { name: "Texture", icon: "🎨" },
+];
+
+const shapeTypes = [
+  { name: "line", icon: <TbLine color="#007acc" /> },
+  { name: "circle", icon: <TbCircle color="#e67e22" /> },
+  { name: "rectangle", icon: <TbRectangle color="#3498db" /> },
+  { name: "triangle", icon: <TbTriangle color="#9b59b6" /> },
+  { name: "diamond", icon: <TbDiamond color="#e74c3c" /> },
+  { name: "pentagon", icon: <TbPentagon color="#1abc9c" /> },
+  { name: "hexagon", icon: <TbHexagon color="#f39c12" /> },
+  { name: "polygon", icon: <TbPolygon color="#2ecc71" /> },
+  { name: "arrow-right", icon: <FaArrowRight color="#34495e" /> },
+  { name: "arrow-left", icon: <FaArrowLeft color="#34495e" /> },
+  { name: "arrow-up", icon: <FaArrowUp color="#34495e" /> },
+  { name: "arrow-down", icon: <FaArrowDown color="#34495e" /> },
+  { name: "star", icon: <FaStar color="#f1c40f" /> },
+];
+
+const Tools = ({
+  selectedTool,
+  onSelectTool,
+  brushType,
+  onBrushTypeChange,
+  brushSize,
+  onBrushSizeChange,
+  onUndo,
+  onRedo,
+  onDownload,
+  color,
+  onColorChange,
+  onShapeSelect,
+  selectedShape,
+}) => {
+  const [showBrushDropdown, setShowBrushDropdown] = useState(false);
+  const [showShapePanel, setShowShapePanel] = useState(false);
+
+  const toggleBrushDropdown = () => {
+    onSelectTool("brush");
+    setShowBrushDropdown((prev) => !prev);
+    setShowShapePanel(false);
+  };
+
+  const toggleShapePanel = () => {
+    onSelectTool("shape");
+    setShowShapePanel((prev) => !prev);
+    setShowBrushDropdown(false);
+  };
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        padding: 10,
+        gap: 8,
+        background: "#ffe6e6",
+        flexWrap: "wrap",
+        borderBottom: "1px solid #ccc",
+        zIndex: 9999,
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+      }}
+    >
+      <button onClick={() => onSelectTool("pencil")} title="Pencil">
+        <FaPencilAlt color="#555" />
+      </button>
+
+      <div style={{ position: "relative" }}>
+        <button onClick={toggleBrushDropdown} title="Brush">
+          <FaPaintBrush color="#007acc" />
+        </button>
+        {showBrushDropdown && (
+          <div
+            style={{
+              position: "absolute",
+              top: "100%",
+              left: 0,
+              background: "white",
+              border: "1px solid #ccc",
+              zIndex: 10000,
+              padding: 4,
+              boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+              minWidth: 160,
+            }}
+          >
+            {brushTypes.map((type) => (
+              <div
+                key={type.name}
+                onClick={() => {
+                  onBrushTypeChange(type.name.toLowerCase());
+                  setShowBrushDropdown(false);
+                }}
+                style={{
+                  padding: "4px 10px",
+                  cursor: "pointer",
+                  color: "black",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {type.icon} {type.name}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <button onClick={() => onSelectTool("eraser")} title="Eraser">
+        <FaEraser color="#d9534f" />
+      </button>
+
+      <button onClick={() => onSelectTool("text")} title="Text">
+        <FaFont color="#5cb85c" />
+      </button>
+
+      <button onClick={() => onSelectTool("fill")} title="Paint Fill">
+        <FaFillDrip color="#f0ad4e" />
+      </button>
+
+      <div style={{ position: "relative" }}>
+        <button onClick={toggleShapePanel} title="Shapes">
+          <IoShapesOutline />
+        </button>
+        {showShapePanel && (
+          <div
+            style={{
+              position: "absolute",
+              top: "100%",
+              left: 0,
+              background: "white",
+              border: "1px solid #ccc",
+              boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+              zIndex: 10000,
+              padding: 4,
+              maxHeight: 180,
+              overflowY: "auto",
+              display: "grid",
+              gridTemplateColumns: "repeat(5, 36px)",
+              gap: 6,
+            }}
+          >
+            {shapeTypes.map((shape) => (
+              <div
+                key={shape.name}
+                title={shape.name}
+                onClick={() => {
+                  onShapeSelect(shape.name);
+                  onSelectTool("shape");
+                  setShowShapePanel(false);
+                }}
+                style={{
+                  fontSize: "20px",
+                  cursor: "pointer",
+                  textAlign: "center",
+                  padding: 4,
+                  border:
+                    selectedShape === shape.name
+                      ? "2px solid #007acc"
+                      : "1px solid #ccc",
+                  borderRadius: 4,
+                  background: "#fff",
+                }}
+              >
+                {shape.icon}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <label style={{ display: "flex", alignItems: "center" }}>
+        <input
+          type="range"
+          min="1"
+          max="30"
+          value={brushSize}
+          onChange={(e) => onBrushSizeChange(parseInt(e.target.value))}
+        />
+      </label>
+
+      <input
+        type="color"
+        value={color}
+        onChange={(e) => onColorChange(e.target.value)}
+        title="Color Picker"
+        style={{
+          width: "32px",
+          height: "32px",
+          border: "none",
+          background: "none",
+          cursor: "pointer",
+        }}
+      />
+
+      <button onClick={onUndo} title="Undo (Ctrl+Z)">
+        <FaUndo />
+      </button>
+      <button onClick={onRedo} title="Redo (Ctrl+Y)">
+        <FaRedo />
+      </button>
+      <button onClick={onDownload} title="Download">
+        <FaDownload />
+      </button>
+    </div>
+  );
+};
+
+export default Tools;
