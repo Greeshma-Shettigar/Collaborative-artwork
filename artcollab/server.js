@@ -7,6 +7,8 @@ import connectDB from './db.js';
 import bcrypt from 'bcryptjs';
 import User from './models/User.js';
 import Room from './models/Room.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const app = express();
 connectDB();
@@ -81,6 +83,17 @@ app.post('/join-room', async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
+});
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve static files
+app.use(express.static(path.join(__dirname, 'public')));
+
+// For any other route, serve index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 const roomUsers = {}; // { roomId: Set(socketIds) }
