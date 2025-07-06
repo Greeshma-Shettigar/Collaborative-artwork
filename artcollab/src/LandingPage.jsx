@@ -7,7 +7,7 @@ import art1 from './art1.jpg';
 import art2 from './art2.jpg';
 import art3 from './art3.jpg';
 
-export default function LandingPage({ onJoin, onCreate }) {
+export default function LandingPage() {
   const [pendingRedirect, setPendingRedirect] = useState(false);
   const [shareableLink, setShareableLink] = useState('');
   const [showLinkModal, setShowLinkModal] = useState(false);
@@ -31,7 +31,10 @@ export default function LandingPage({ onJoin, onCreate }) {
 
       const data = await res.json();
       if (res.ok) {
-        onJoin(name, roomId); // you already have name
+        navigate(`/canvas/${roomId}`, {
+  state: { me: name },
+});
+// you already have name
       } else {
         alert(data.message); // shows "Room ID does not exist!"
       }

@@ -135,6 +135,17 @@ io.on("connection", (socket) => {
     }
     console.log(`🔴 User disconnected: ${socket.id}`);
   });
+  socket.on("leave-room", ({ roomId, username }) => {
+  if (roomUsers[roomId]) {
+    roomUsers[roomId].delete(socket.id);
+    if (roomUsers[roomId].size === 0) {
+      delete roomUsers[roomId];
+    }
+  }
+  socket.leave(roomId);
+  console.log(`👋 ${username} left room: ${roomId}`);
+});
+
 });
 
 const PORT = process.env.PORT || 3000;

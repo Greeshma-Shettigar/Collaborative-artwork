@@ -2,11 +2,13 @@ import React, { useRef, useState, useEffect } from "react";
 import Tools from "./Tools";
 import { drawBrushStroke, drawShape } from "./drawingUtils";
 import socket from "./socket";
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation} from 'react-router-dom';
 
 
-const Canvas = ({ me }) => {
+const Canvas = () => {
   const { roomId } = useParams(); 
+  const location = useLocation();
+  const me = location.state?.me || "Anonymous";
   const canvasRef = useRef(null);
   const pathsRef = useRef([]);
   const ctxRef = useRef(null);
@@ -23,7 +25,24 @@ const Canvas = ({ me }) => {
   const [selectedShape, setSelectedShape] = useState("line");
   const [textInput, setTextInput] = useState("");
   const [textPos, setTextPos] = useState(null);
-  
+ 
+  useEffect(() => {
+  socket.emit("join-room", { roomId, name: me });
+
+  return () => {
+    socket.emit("leave-room", { roomId, name: me });
+  };
+}, [roomId, me]);
+
+useEffect(() => {
+  socket.on("room-full", ({ message }) => {
+    alert(message); // Or customize UI here
+  });
+
+  return () => socket.off("room-full");
+}, []);
+
+
   useEffect(() => {
   pathsRef.current = paths;
 }, [paths]);
@@ -73,14 +92,15 @@ const Canvas = ({ me }) => {
 
 
   useEffect(() => {
-    socket.on("remote-path", (item) => {
-      setPaths((prev) => {
-  const updated = [...prev, item];
-  pathsRef.current = updated;
-  return updated;
+   socket.on("remote-path", (item) => {
+  if (item.roomId !== roomId) return; // ignore unrelated rooms
+  setPaths((prev) => {
+    const updated = [...prev, item];
+    pathsRef.current = updated;
+    return updated;
+  });
 });
 
-    });
     return () => socket.off("remote-path");
   }, []);
 
@@ -178,7 +198,7 @@ const Canvas = ({ me }) => {
   return updated;
 });
       console.log("Emitting path", item);
-      socket.emit("remote-path", item);
+      socket.emit("remote-path",  { ...item, roomId });
     } else if (tool === "shape" && startPos && shapeEndPos) {
       const item = {
         type: "shape",
@@ -194,7 +214,7 @@ const Canvas = ({ me }) => {
   return updated;
 });
       console.log("Emitting path", item);
-      socket.emit("remote-path", item);
+      socket.emit("remote-path",  { ...item, roomId });
     }
 
     setCurrentPath([]);
@@ -230,7 +250,7 @@ const Canvas = ({ me }) => {
     pathsRef.current = updated;
     return updated;
   });
-  socket.emit("remote-path", item);
+  socket.emit("remote-path",  { ...item, roomId });
   return;
 }
 
@@ -263,7 +283,7 @@ const Canvas = ({ me }) => {
   return updated;
 });
 
-    socket.emit("remote-path", item);
+    socket.emit("remote-path",  { ...item, roomId });
   }
 };
 
@@ -300,7 +320,7 @@ const Canvas = ({ me }) => {
   return updated;
 });
 
-      socket.emit("remote-path", item);
+      socket.emit("remote-path",  { ...item, roomId });
       setTextInput("");
       setTextPos(null);
       redraw();
