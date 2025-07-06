@@ -82,7 +82,10 @@ const roomUsers = {}; // { roomId: Set(socketIds) }
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // allow any frontend during development
+    origin:[
+      "http://localhost:5173",
+      "https://collaborative-artwork-r1euw3rrz-greeshma-shettigars-projects.vercel.app"
+    ] , // allow any frontend during development
     methods: ["GET", "POST"],
   },
 });
