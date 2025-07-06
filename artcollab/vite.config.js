@@ -3,10 +3,10 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  optimizeDeps: {},
+  build: {
+    outDir: 'dist'
+  },
   server: {
-    allowedHosts: ["075c-117-252-109-209.ngrok-free.app"], 
-    host: true, 
-    port: 5173
+    historyApiFallback: true // 👈 important for SPA routing
   }
 });
