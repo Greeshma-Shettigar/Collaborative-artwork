@@ -1,4 +1,3 @@
-// server.js
 import express from 'express';
 import { Server } from 'socket.io';
 import http from 'http';
@@ -7,16 +6,17 @@ import connectDB from './db.js';
 import bcrypt from 'bcryptjs';
 import User from './models/User.js';
 import Room from './models/Room.js';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 const app = express();
 connectDB();
+
 app.use(cors({
   origin: [
     "http://localhost:5173",
     "https://collaborative-artwork-r1euw3rrz-greeshma-shettigars-projects.vercel.app"
-  ]
+  ],
+  methods: ["GET", "POST"],
+  credentials: true
 }));
 
 app.use(express.json());
@@ -36,7 +36,6 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// Login route
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
   try {
@@ -85,28 +84,20 @@ app.post('/join-room', async (req, res) => {
   }
 });
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// --- No frontend routes served by backend (Vercel handles it)
 
-// Serve static files
-app.use(express.static(path.join(__dirname, 'public')));
-
-// For any other route, serve index.html
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-const roomUsers = {}; // { roomId: Set(socketIds) }
+const roomUsers = {};
 
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin:[
+    origin: [
       "http://localhost:5173",
       "https://collaborative-artwork-r1euw3rrz-greeshma-shettigars-projects.vercel.app"
-    ] , // allow any frontend during development
+    ],
     methods: ["GET", "POST"],
-  },
+    credentials: true
+  }
 });
 
 io.on("connection", (socket) => {
@@ -124,8 +115,8 @@ io.on("connection", (socket) => {
 
     roomUsers[roomId].add(socket.id);
     socket.join(roomId);
-
     console.log(`✅ ${username} joined room: ${roomId}`);
+
     io.to(roomId).emit("user-joined", { socketId: socket.id, username });
   });
 
@@ -137,9 +128,8 @@ io.on("connection", (socket) => {
     for (const roomId of socket.rooms) {
       if (roomUsers[roomId]) {
         roomUsers[roomId].delete(socket.id);
-
         if (roomUsers[roomId].size === 0) {
-          delete roomUsers[roomId]; // Clean up empty room
+          delete roomUsers[roomId];
         }
       }
     }
