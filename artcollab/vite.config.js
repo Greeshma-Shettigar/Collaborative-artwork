@@ -9,7 +9,13 @@ export default defineConfig({
      historyApiFallback: true
   },
   build: {
-    outDir: 'dist'
+    outDir: 'dist',
+     rollupOptions: {
+      input: {
+        main: 'index.html',
+        fallback: 'fallback.html'
+      }
+    }
   },
   // 👇 This is crucial to prevent 404s when refreshing in Vercel
   resolve: {

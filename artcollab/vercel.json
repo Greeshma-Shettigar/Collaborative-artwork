@@ -1,5 +1,6 @@
 {
-  "rewrites": [
-    { "source": "/canvas/:path*", "destination": "/" }
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/.*", "dest": "/fallback.html" }
   ]
 }
