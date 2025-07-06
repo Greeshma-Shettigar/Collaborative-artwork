@@ -10,7 +10,13 @@ import Room from './models/Room.js';
 
 const app = express();
 connectDB();
-app.use(cors({ origin: process.env.CORS_ORIGIN || "http://localhost:5173" }));
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://collaborative-artwork-r1euw3rrz-greeshma-shettigars-projects.vercel.app"
+  ]
+}));
+
 app.use(express.json());
 
 app.post('/register', async (req, res) => {
