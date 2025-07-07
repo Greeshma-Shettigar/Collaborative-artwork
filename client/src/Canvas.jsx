@@ -99,18 +99,37 @@ useEffect(() => {
 
 
   useEffect(() => {
-   socket.on("remote-path", (item) => {
-  if (item.roomId !== roomId) return; // ignore unrelated rooms
-  setPaths((prev) => {
-    const updated = [...prev, item];
-    pathsRef.current = updated;
-     redraw(updated); // ✅ draw immediately
-    return updated;
-  });
-});
+  socket.on("remote-path", (item) => {
+    if (item.roomId !== roomId) return;
 
-    return () => socket.off("remote-path");
-  }, [roomId]);
+    // Push to ref immediately
+    const updatedPaths = [...pathsRef.current, item];
+    pathsRef.current = updatedPaths;
+
+    // Draw immediately
+    if (ctxRef.current) {
+      const ctx = ctxRef.current;
+
+      if (item.type === "freehand") {
+        drawBrushStroke(ctx, item.points, item.brushType, item.size, item.color);
+      } else if (item.type === "shape") {
+        drawShape(ctx, item.shapeType, item.start, item.end, item.color, item.size);
+      } else if (item.type === "text") {
+        ctx.font = `${item.size * 4}px sans-serif`;
+        ctx.fillStyle = item.color;
+        ctx.fillText(item.text, item.pos.x, item.pos.y);
+      } else if (item.type === "fill") {
+        floodFill(item.x, item.y, item.color, true);
+      }
+    }
+
+    // Also store in React state (for undo/redo)
+    setPaths(updatedPaths);
+  });
+
+  return () => socket.off("remote-path");
+}, [roomId]);
+
 
   const redraw = (customPaths = pathsRef.current) => {
 
