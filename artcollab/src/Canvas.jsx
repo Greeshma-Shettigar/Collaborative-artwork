@@ -90,6 +90,13 @@ useEffect(() => {
   };
 }, []);
 
+ // ✅ Join room on mount
+  useEffect(() => {
+    if (!roomId || !me) return;
+    socket.emit("join-room", { roomId, username: me });
+    console.log( `Joined room: ${roomId} as ${me}`);
+  }, [roomId, me]);
+
 
   useEffect(() => {
    socket.on("remote-path", (item) => {

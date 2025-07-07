@@ -87,6 +87,7 @@ app.post('/join-room', async (req, res) => {
 // --- No frontend routes served by backend (Vercel handles it)
 
 const roomUsers = {};
+const socketToRoom = {}
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -114,6 +115,7 @@ io.on("connection", (socket) => {
     }
 
     roomUsers[roomId].add(socket.id);
+    socketToRoom[socket.id]=roomId;
     socket.join(roomId);
     console.log(`✅ ${username} joined room: ${roomId}`);
 
@@ -121,8 +123,12 @@ io.on("connection", (socket) => {
   });
 
   socket.on("remote-path", (data) => {
-    socket.to(data.roomId).emit("remote-path", data);
+    const roomId = socketToRoom[socket.id];
+    if (roomId) {
+      socket.to(roomId).emit("remote-path", data);
+    }
   });
+
 
   socket.on("disconnecting", () => {
     for (const roomId of socket.rooms) {
@@ -133,6 +139,8 @@ io.on("connection", (socket) => {
         }
       }
     }
+     delete socketToRoom[socket.id];
+
     console.log(`🔴 User disconnected: ${socket.id}`);
   });
   socket.on("leave-room", ({ roomId, username }) => {
@@ -143,6 +151,8 @@ io.on("connection", (socket) => {
     }
   }
   socket.leave(roomId);
+  delete socketToRoom[socket.id];
+
   console.log(`👋 ${username} left room: ${roomId}`);
 });
 
