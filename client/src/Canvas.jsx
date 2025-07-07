@@ -104,12 +104,13 @@ useEffect(() => {
   setPaths((prev) => {
     const updated = [...prev, item];
     pathsRef.current = updated;
+     redraw(updated); // ✅ draw immediately
     return updated;
   });
 });
 
     return () => socket.off("remote-path");
-  }, []);
+  }, [roomId]);
 
   const redraw = (customPaths = pathsRef.current) => {
 
@@ -445,42 +446,6 @@ useEffect(() => {
   />
 </div>
 
-
-<div
-  style={{
-    position: "absolute",
-    top: "100px", // below toolbar
-    left: 0,
-    right: 0,
-    bottom: 0,
-    overflow: "auto",          // allow scrollbars
-    backgroundColor: "#fff",
-    padding: 0,
-    margin: 0,
-  }}
->
-  <div
-    style={{
-      width: "3000px",         // large enough for drawing
-      height: "2000px",        // large enough for drawing
-    }}
-  >
-    <canvas
-      ref={canvasRef}
-      width={3000}
-      height={2000}
-      style={{
-        backgroundColor: "white",
-        cursor: tool === "text" ? "text" : "crosshair",
-        display: "block",
-      }}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={() => setIsDrawing(false)}
-    />
-  </div>
-</div>
       {tool === "text" && textPos && (
         <form
           onSubmit={handleTextSubmit}
