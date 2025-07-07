@@ -2,10 +2,10 @@ import express from 'express';
 import { Server } from 'socket.io';
 import http from 'http';
 import cors from 'cors';
-import connectDB from '../db.js';
+import connectDB from './db.js';
 import bcrypt from 'bcryptjs';
-import User from '../models/User.js';
-import Room from '../models/Room.js';
+import User from './models/User.js';
+import Room from './models/Room.js';
 
 const app = express();
 connectDB();
@@ -13,7 +13,8 @@ connectDB();
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://collaborative-artwork-r1euw3rrz-greeshma-shettigars-projects.vercel.app"
+    "https://collaborative-artwork-r1euw3rrz-greeshma-shettigars-projects.vercel.app",
+    "https://collaborative-artwork-4n20zomff-greeshma-shettigars-projects.vercel.app"
   ],
   methods: ["GET", "POST"],
   credentials: true
