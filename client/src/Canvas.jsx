@@ -3,7 +3,7 @@ import Tools from "./Tools";
 import { drawBrushStroke, drawShape } from "./drawingUtils";
 import socket from "./socket";
 import { useParams, useLocation} from 'react-router-dom';
-
+//import { useEffect } from "react";
 
 const Canvas = () => {
   const { roomId } = useParams(); 
