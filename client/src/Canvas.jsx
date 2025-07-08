@@ -3,7 +3,7 @@ import Tools from "./Tools";
 import { drawBrushStroke, drawShape } from "./drawingUtils";
 import socket from "./socket";
 import { useParams, useLocation} from 'react-router-dom';
-
+import { useEffect } from "react";
 
 const Canvas = () => {
   const { roomId } = useParams(); 
@@ -130,6 +130,16 @@ useEffect(() => {
   return () => socket.off("remote-path");
 }, [roomId]);
 
+useEffect(() => {
+  socket.on("flood-fill", ({ x, y, fillColor }) => {
+    floodFill(x, y, fillColor, true); // Only apply locally
+  });
+
+  return () => {
+    socket.off("flood-fill");
+  };
+}, []);
+
 
   const redraw = (customPaths = pathsRef.current) => {
 
@@ -178,9 +188,11 @@ useEffect(() => {
     if (["pencil", "brush", "eraser"].includes(tool)) {
       setCurrentPath([pos]);
     } else if (tool === "fill") {
-      console.log("Fill triggered at", pos); 
-      floodFill(pos.x, pos.y, color);
-    } else if (tool === "text") {
+  const x = Math.floor(pos.x);
+  const y = Math.floor(pos.y);
+  floodFill(x, y, color); // your own canvas
+  socket.emit("flood-fill", { x, y, fillColor: color, roomId }); // broadcast to others
+} else if (tool === "text") {
       setTextPos(pos);
     }
   };
@@ -337,6 +349,17 @@ useEffect(() => {
   return [r, g, b, 255]; // fully opaque
 };;
 
+useEffect(() => {
+  socket.on("color-updated", (newColor) => {
+    setColor(newColor); // this updates your local color state
+  });
+
+  return () => {
+    socket.off("color-updated");
+  };
+}, []);
+
+
   const handleTextSubmit = (e) => {
     e.preventDefault();
     if (textPos && textInput.trim()) {
@@ -410,6 +433,7 @@ useEffect(() => {
             setSelectedShape(shape);
           }}
           selectedShape={tool === "shape" ? selectedShape : null}
+           roomId={roomId} // ✅ pass roomId
         />
       </div>
        {/* Room Info Banner */}

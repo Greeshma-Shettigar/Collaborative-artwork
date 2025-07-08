@@ -1,4 +1,7 @@
 import React, { useState } from "react";
+import { getColorPalette } from './utils/colorAPI';
+import { socket } from "../socket"; 
+
 import {
   FaPencilAlt,
   FaFillDrip,
@@ -66,10 +69,16 @@ const Tools = ({
   onColorChange,
   onShapeSelect,
   selectedShape,
+  roomId, // ✅ now accessible
 }) => {
   const [showBrushDropdown, setShowBrushDropdown] = useState(false);
   const [showShapePanel, setShowShapePanel] = useState(false);
+  const [suggestedColors, setSuggestedColors] = useState([]);
 
+const fetchSuggestedColors = async () => {
+  const palette = await getColorPalette();
+  setSuggestedColors(palette);
+};
   const toggleBrushDropdown = () => {
     onSelectTool("brush");
     setShowBrushDropdown((prev) => !prev);
@@ -82,7 +91,9 @@ const Tools = ({
     setShowBrushDropdown(false);
   };
 
-  return (
+ return (
+  <>
+    {/* 🎯 Top Toolbar */}
     <div
       style={{
         display: "flex",
@@ -239,7 +250,63 @@ const Tools = ({
         <FaDownload />
       </button>
     </div>
-  );
+
+    {/* 🎨 AI Color Suggestions */}
+    <div
+      style={{
+        marginTop: 60, // pushes below fixed toolbar
+        display: "flex",
+        alignItems: "center",
+        flexWrap: "wrap",
+        padding: "8px 16px",
+        background: "#fdf6e3",
+        borderTop: "1px solid #ccc",
+        gap: 8,
+      }}
+    >
+      <button
+        onClick={fetchSuggestedColors}
+        style={{
+          padding: "6px 12px",
+          borderRadius: "6px",
+          border: "1px solid #ccc",
+          background: "#fff",
+          cursor: "pointer",
+          fontWeight: "bold",
+        }}
+      >
+        🎨 AI Suggest Colors
+      </button>
+
+      {suggestedColors.length > 0 && (
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          {suggestedColors.map((color, index) => {
+            const rgb = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+            return (
+              <div
+                key={index}
+                title={rgb}
+                onClick={() => {
+                onColorChange(rgb);
+                socket.emit("color-change", { color: rgb, roomId }); // <-- add this
+                 }}
+
+                style={{
+                  backgroundColor: rgb,
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  border: "2px solid #555",
+                  cursor: "pointer",
+                }}
+              />
+            );
+          })}
+        </div>
+      )}
+    </div>
+  </>
+);
 };
 
 export default Tools;
