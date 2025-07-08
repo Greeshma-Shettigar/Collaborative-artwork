@@ -6,7 +6,7 @@ import connectDB from './db.js';
 import bcrypt from 'bcryptjs';
 import User from './models/User.js';
 import Room from './models/Room.js';
-
+import colormindRoute from './colormindRoute.js';
 const app = express();
 connectDB();
 
@@ -22,6 +22,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use('/api', colormindRoute);
 
 app.post('/register', async (req, res) => {
   const { username, password } = req.body;
@@ -106,6 +107,14 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
   console.log(`🟢 User connected: ${socket.id}`);
 
+  socket.on("color-change", ({ color, roomId }) => {
+    socket.to(roomId).emit("color-updated", color);
+  });
+
+  socket.on("flood-fill", ({ x, y, fillColor, roomId }) => {
+    socket.to(roomId).emit("flood-fill", { x, y, fillColor });
+  });
+  
   socket.on("join-room", ({ roomId, username }) => {
     if (!roomUsers[roomId]) {
       roomUsers[roomId] = new Set();
@@ -156,6 +165,7 @@ io.on("connection", (socket) => {
   delete socketToRoom[socket.id];
 
   console.log(`👋 ${username} left room: ${roomId}`);
+  
 });
 
 });
