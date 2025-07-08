@@ -18,5 +18,4 @@ router.post('/colormind', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch color palette' });
   }
 });
-
-module.exports = router;
+export default router;
