@@ -29,6 +29,7 @@ import {
   TbLine,
 } from "react-icons/tb";
 import { IoShapesOutline } from "react-icons/io5";
+import { GiPainter } from "react-icons/gi";
 
 const brushTypes = [
   { name: "Normal Brush", icon: "🖌" },
@@ -71,6 +72,7 @@ const Tools = ({
   onShapeSelect,
   selectedShape,
   roomId, // ✅ now accessible
+   onToggleAIStyleTransferUI, // Function passed from Canvas.jsx to toggle UI visibility
 }) => {
   const [showBrushDropdown, setShowBrushDropdown] = useState(false);
   const [showShapePanel, setShowShapePanel] = useState(false);
@@ -87,12 +89,27 @@ const fetchSuggestedColors = async () => {
     onSelectTool("brush");
     setShowBrushDropdown((prev) => !prev);
     setShowShapePanel(false);
+   // Close AI Style Transfer UI when opening brush dropdown ---
+    if (onToggleAIStyleTransferUI) onToggleAIStyleTransferUI(false);
   };
 
   const toggleShapePanel = () => {
     onSelectTool("shape");
     setShowShapePanel((prev) => !prev);
     setShowBrushDropdown(false);
+    // --- Close AI Style Transfer UI when opening shape panel ---
+    if (onToggleAIStyleTransferUI) onToggleAIStyleTransferUI(false);
+  };
+  // ---  Handler for AI Style Transfer button ---
+  const handleAIStyleTransferClick = () => {
+    // This button will toggle the AI Style Transfer UI visibility in Canvas.jsx
+    if (onToggleAIStyleTransferUI) {
+        onToggleAIStyleTransferUI(); // Call the function passed from Canvas
+    }
+    // Optionally close other dropdowns when AI button is clicked
+    setShowBrushDropdown(false);
+    setShowShapePanel(false);
+    // We don't set a tool here, as it's not a drawing tool for the canvas itself
   };
 
  return (
@@ -272,7 +289,25 @@ const fetchSuggestedColors = async () => {
       >
         🎨 AI Suggest Colors
       </button>
-      <button>test</button>
+      {/* ---  AI Style Transfer Button --- */}
+        <button
+          onClick={handleAIStyleTransferClick}
+          title="AI Style Transfer"
+          style={{
+            padding: "6px 12px",
+            borderRadius: "6px",
+            border: "1px solid #4CAF50", // Green border
+            background: "#4CAF50", // Green background
+            color: "white", // White text
+            cursor: "pointer",
+            fontWeight: "bold",
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+          }}
+        >
+          <GiPainter /> AI Style Transfer
+        </button>
 
       {/* ✅ Display AI color swatches if present */}
       {suggestedColors.length > 0 && (
