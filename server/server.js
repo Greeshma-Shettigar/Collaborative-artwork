@@ -15,7 +15,7 @@ connectDB();
 
 app.use(cors({
   origin: [
-    "http://localhost:5173",
+    "http://localhost:5174",
     "https://collaborative-artwork-r1euw3rrz-greeshma-shettigars-projects.vercel.app",
     "https://collaborative-artwork-4n20zomff-greeshma-shettigars-projects.vercel.app",
     "https://collaborative-artwork-d5e6xnhon-greeshma-shettigars-projects.vercel.app",
@@ -25,7 +25,9 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
 app.use('/api', colormindRoute);
 // --- NEW STYLE TRANSFER API ROUTE ---
 app.use('/api/style-transfer', styleTransferRoutes);
@@ -102,7 +104,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: [
-      "http://localhost:5173",
+      "http://localhost:5174",
       "https://collaborative-artwork-d5e6xnhon-greeshma-shettigars-projects.vercel.app"
     ],
     methods: ["GET", "POST"],

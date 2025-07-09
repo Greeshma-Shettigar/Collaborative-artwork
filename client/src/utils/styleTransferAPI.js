@@ -2,7 +2,7 @@
 
 // Important: Use your deployed Render backend URL for production
 // For local development, it might be 'http://localhost:5000'
-const BACKEND_API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+const BACKEND_API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 const STYLE_TRANSFER_ENDPOINT = `https://collaborative-artwork-gf2e.onrender.com/api/style-transfer/apply-style`;
 
 export async function applyStyle(imageBase64, prompt) {

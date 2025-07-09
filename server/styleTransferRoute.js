@@ -53,6 +53,7 @@ router.post('/apply-style', async (req, res) => {
         // Send the image bytes directly back to the frontend
         res.setHeader('Content-Type', response.headers['content-type']);
         res.send(response.data);
+        console.log("hfj");
 
     } catch (error) {
         console.error("Error calling Hugging Face API:", error.response ? error.response.data.toString() : error.message);
