@@ -67,7 +67,7 @@ const Canvas = () => {
 
   useEffect(() => {
     if (canvasRef.current) {
-      const ctx = canvas.current.getContext("2d");
+      const ctx =  canvasRef.current.getContext("2d");
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
       ctxRef.current = ctx;
