@@ -296,9 +296,9 @@ const fetchSuggestedColors = async () => {
           style={{
             padding: "6px 12px",
             borderRadius: "6px",
-            border: "1px solid #4CAF50", // Green border
-            background: "#4CAF50", // Green background
-            color: "white", // White text
+            border: "1px solid #ccc", 
+            background: "#fff", 
+            //color: "white", // White text
             cursor: "pointer",
             fontWeight: "bold",
             display: "flex",
