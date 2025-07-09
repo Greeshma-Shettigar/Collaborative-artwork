@@ -1,6 +1,6 @@
 export async function getColorPalette(model = "default", input = [null, null, null, null, null]) {
   try {
-    const response = await fetch('/api/colormind', {
+    const response = await fetch('https://collaborative-artwork-gf2e.onrender.com/api/colormind', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model, input }),
