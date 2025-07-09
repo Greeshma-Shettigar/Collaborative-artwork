@@ -56,14 +56,17 @@ const Canvas = () => {
   }, [paths]);
 
   const setCanvasSize = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  const canvas = canvasRef.current;
+  if (!canvas) return;
 
-    canvas.width = 3000;
+  //canvas.width = window.innerWidth;
+  //canvas.height = window.innerHeight - 60;
+   canvas.width = 3000;
     canvas.height = 2000;
 
-    redraw(pathsRef.current);
-  };
+  redraw(pathsRef.current); // ✅ use the latest ref data
+};
+
 
   useEffect(() => {
     if (canvasRef.current) {
@@ -74,28 +77,34 @@ const Canvas = () => {
       setCanvasSize();
     }
 
-    const handleWindowResize = () => {
+    const handleResize = () => {
         clearTimeout(window.resizeTimeout);
         window.resizeTimeout = setTimeout(() => {
           setCanvasSize();
         }, 150);
     };
-    window.addEventListener("resize", handleWindowResize);
-
-
-    const observer = new ResizeObserver(() => {
-        redraw();
-    });
-
-    if (canvasRef.current?.parentNode) {
-      observer.observe(canvasRef.current.parentNode);
-    }
-
-    return () => {
-      window.removeEventListener("resize", handleWindowResize);
-      observer.disconnect();
-    };
+    window.addEventListener("resize", handleResize);
+     return () => window.removeEventListener("resize", handleResize);
   }, []);
+  useEffect(() => {
+  const observer = new ResizeObserver(() => {
+    setCanvasSize(); // Or use a debounced version if needed
+  });
+
+  if (canvasRef.current?.parentNode) {
+    observer.observe(canvasRef.current.parentNode);
+  }
+
+  return () => {
+    observer.disconnect();
+  };
+}, []);
+ // ✅ Join room on mount
+  useEffect(() => {
+    if (!roomId || !me) return;
+    socket.emit("join-room", { roomId, username: me });
+    console.log(`Joined room: ${roomId} as ${me}` );
+  }, [roomId, me]);
 
   useEffect(() => {
     socket.on("remote-path", (item) => {
