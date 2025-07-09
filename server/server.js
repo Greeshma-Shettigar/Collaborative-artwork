@@ -15,7 +15,8 @@ app.use(cors({
     "http://localhost:5173",
     "https://collaborative-artwork-r1euw3rrz-greeshma-shettigars-projects.vercel.app",
     "https://collaborative-artwork-4n20zomff-greeshma-shettigars-projects.vercel.app",
-    "https://collaborative-artwork-d5e6xnhon-greeshma-shettigars-projects.vercel.app"
+    "https://collaborative-artwork-d5e6xnhon-greeshma-shettigars-projects.vercel.app",
+    "https://collaborative-artwork.vercel.app"
   ],
   methods: ["GET", "POST"],
   credentials: true
@@ -114,7 +115,7 @@ io.on("connection", (socket) => {
   socket.on("flood-fill", ({ x, y, fillColor, roomId }) => {
     socket.to(roomId).emit("flood-fill", { x, y, fillColor });
   });
-  
+
   socket.on("join-room", ({ roomId, username }) => {
     if (!roomUsers[roomId]) {
       roomUsers[roomId] = new Set();
