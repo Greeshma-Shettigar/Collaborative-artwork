@@ -97,7 +97,7 @@ const fetchSuggestedColors = async () => {
 
  return (
   <>
-    {/* 🎯 Top Toolbar */}
+    {/* 🎯 Top Toolbar with AI Button */}
     <div
       style={{
         display: "flex",
@@ -114,10 +114,12 @@ const fetchSuggestedColors = async () => {
         right: 0,
       }}
     >
+      {/* Regular Tool Buttons */}
       <button onClick={() => onSelectTool("pencil")} title="Pencil">
         <FaPencilAlt color="#555" />
       </button>
 
+      {/* Brush dropdown */}
       <div style={{ position: "relative" }}>
         <button onClick={toggleBrushDropdown} title="Brush">
           <FaPaintBrush color="#007acc" />
@@ -220,6 +222,7 @@ const fetchSuggestedColors = async () => {
         )}
       </div>
 
+      {/* Brush size */}
       <label style={{ display: "flex", alignItems: "center" }}>
         <input
           type="range"
@@ -230,6 +233,7 @@ const fetchSuggestedColors = async () => {
         />
       </label>
 
+      {/* Color Picker */}
       <input
         type="color"
         value={color}
@@ -253,21 +257,8 @@ const fetchSuggestedColors = async () => {
       <button onClick={onDownload} title="Download">
         <FaDownload />
       </button>
-    </div>
 
-    {/* 🎨 AI Color Suggestions */}
-    <div
-      style={{
-        marginTop: 100, // pushes below fixed toolbar
-        display: "flex",
-        alignItems: "center",
-        flexWrap: "wrap",
-        padding: "8px 16px",
-        background: "#fdf6e3",
-        borderTop: "1px solid #ccc",
-        gap: 8,
-      }}
-    >
+      {/* ✅ AI Suggest Colors button in toolbar */}
       <button
         onClick={fetchSuggestedColors}
         style={{
@@ -282,8 +273,9 @@ const fetchSuggestedColors = async () => {
         🎨 AI Suggest Colors
       </button>
 
+      {/* ✅ Display AI color swatches if present */}
       {suggestedColors.length > 0 && (
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
           {suggestedColors.map((color, index) => {
             const rgb = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
             return (
@@ -291,14 +283,13 @@ const fetchSuggestedColors = async () => {
                 key={index}
                 title={rgb}
                 onClick={() => {
-                onColorChange(rgb);
-                socket.emit("color-change", { color: rgb, roomId }); // <-- add this
-                 }}
-
+                  onColorChange(rgb);
+                  socket.emit("color-change", { color: rgb, roomId });
+                }}
                 style={{
                   backgroundColor: rgb,
-                  width: 32,
-                  height: 32,
+                  width: 26,
+                  height: 26,
                   borderRadius: "50%",
                   border: "2px solid #555",
                   cursor: "pointer",
@@ -312,5 +303,4 @@ const fetchSuggestedColors = async () => {
   </>
 );
 };
-
 export default Tools;
