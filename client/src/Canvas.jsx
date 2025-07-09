@@ -423,6 +423,7 @@ const Canvas = () => {
 
   // --- NEW: Toggle AI Style Transfer UI visibility ---
   const toggleAIStyleTransferUI = useCallback((forceClose = null) => {
+   console.log("Inside toggleAIStyleTransferUI")
     setShowAIStyleTransferUI(prev => typeof forceClose === 'boolean' ? forceClose : !prev);
     // When opening/closing AI UI, we might want to clear existing styled image
     if (!showAIStyleTransferUI || forceClose) { // If it was hidden, or we're forcing close
@@ -430,8 +431,9 @@ const Canvas = () => {
         setStylePrompt("");
         setStyleError(null);
     }
-  }, [showAIStyleTransferUI]); // Dependency to correctly detect `showAIStyleTransferUI` for the logic inside
+  }, [showAIStyleTransferUI]);
 
+useEffect(()=>console.log("showAIStyleTransferUI", showAIStyleTransferUI), [showAIStyleTransferUI])
   const handleStyleApply = useCallback(async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
