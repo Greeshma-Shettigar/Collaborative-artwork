@@ -77,9 +77,12 @@ const Tools = ({
   const [suggestedColors, setSuggestedColors] = useState([]);
 
 const fetchSuggestedColors = async () => {
+  console.log("Fetching AI colors..."); // test log
   const palette = await getColorPalette();
+  console.log("AI palette:", palette);
   setSuggestedColors(palette);
 };
+
   const toggleBrushDropdown = () => {
     onSelectTool("brush");
     setShowBrushDropdown((prev) => !prev);
@@ -255,7 +258,7 @@ const fetchSuggestedColors = async () => {
     {/* 🎨 AI Color Suggestions */}
     <div
       style={{
-        marginTop: 60, // pushes below fixed toolbar
+        marginTop: 100, // pushes below fixed toolbar
         display: "flex",
         alignItems: "center",
         flexWrap: "wrap",
