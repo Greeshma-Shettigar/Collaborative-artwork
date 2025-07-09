@@ -102,8 +102,10 @@ const fetchSuggestedColors = async () => {
   };
   // ---  Handler for AI Style Transfer button ---
   const handleAIStyleTransferClick = () => {
-    // This button will toggle the AI Style Transfer UI visibility in Canvas.jsx
+       // This button will toggle the AI Style Transfer UI visibility in Canvas.jsx
     if (onToggleAIStyleTransferUI) {
+console.log("If condition reached");
+
         onToggleAIStyleTransferUI(); // Call the function passed from Canvas
     }
     // Optionally close other dropdowns when AI button is clicked
