@@ -7,6 +7,9 @@ import bcrypt from 'bcryptjs';
 import User from './models/User.js';
 import Room from './models/Room.js';
 import colormindRoute from './colormindRoute.js';
+import styleTransferRoutes from './styleTransferRoute.js'; // Assuming you named the new file styleTransferRoute.js
+import bodyParser from 'body-parser'; // For parsing large JSON payloads (base64 images)
+import 'dotenv/config'; // Import dotenv/config for ES Modules. This loads environment variables from .env
 const app = express();
 connectDB();
 
@@ -24,6 +27,8 @@ app.use(cors({
 
 app.use(express.json());
 app.use('/api', colormindRoute);
+// --- NEW STYLE TRANSFER API ROUTE ---
+app.use('/api/style-transfer', styleTransferRoutes);
 
 app.post('/register', async (req, res) => {
   const { username, password } = req.body;
