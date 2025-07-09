@@ -29,7 +29,7 @@ import {
   TbLine,
 } from "react-icons/tb";
 import { IoShapesOutline } from "react-icons/io5";
-import { GiPainter } from "react-icons/gi";
+import { GiPalette } from "react-icons/gi";
 
 const brushTypes = [
   { name: "Normal Brush", icon: "🖌" },
@@ -306,7 +306,7 @@ const fetchSuggestedColors = async () => {
             gap: "5px",
           }}
         >
-          <GiPainter /> AI Style Transfer
+          <GiPalette /> AI Style Transfer
         </button>
 
       {/* ✅ Display AI color swatches if present */}
