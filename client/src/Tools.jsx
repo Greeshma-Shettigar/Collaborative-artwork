@@ -272,6 +272,7 @@ const fetchSuggestedColors = async () => {
       >
         🎨 AI Suggest Colors
       </button>
+      <button>test</button>
 
       {/* ✅ Display AI color swatches if present */}
       {suggestedColors.length > 0 && (
