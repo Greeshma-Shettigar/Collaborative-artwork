@@ -29,7 +29,7 @@ import {
   TbLine,
 } from "react-icons/tb";
 import { IoShapesOutline } from "react-icons/io5";
-import { FaImage } from "react-icons/gi";
+import { FaImage } from "react-icons/fa";
 
 const brushTypes = [
   { name: "Normal Brush", icon: "🖌" },
