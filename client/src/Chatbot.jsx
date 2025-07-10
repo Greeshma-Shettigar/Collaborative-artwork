@@ -50,8 +50,8 @@ const Chatbot = ({ visible, onClose }) => {
       <div
         style={{
           padding: "10px",
-          backgroundColor: "#007bff",
-          color: "white",
+          backgroundColor: "#ffe6e6",
+          color: "black",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
