@@ -151,21 +151,7 @@ const Canvas = () => {
       socket.off("flood-fill");
     };
   }, []);
-  useEffect(() => {
-        socket.on("canvas-state-update", ({ roomId: remoteRoomId, paths: newRemotePaths }) => {
-            if (remoteRoomId !== roomId) {
-                console.log(`[CLIENT] Received state update for different room: ${remoteRoomId}, current: ${roomId}`);
-                return; // Ignore if not for the current room
-            }
 
-            console.log("[CLIENT] Received canvas state update for room:", roomId, "New paths count:", newRemotePaths.length);
-            setPaths(newRemotePaths);
-              pathsRef.current = newRemotePaths;
-             setRedoStack([]);
-             redraw(newRemotePaths);
-        });
-         return () => socket.off("canvas-state-update");
-    }, [roomId, setPaths, redraw]);
   
             
 
@@ -198,6 +184,22 @@ const Canvas = () => {
       }
     }
   };
+
+    useEffect(() => {
+        socket.on("canvas-state-update", ({ roomId: remoteRoomId, paths: newRemotePaths }) => {
+            if (remoteRoomId !== roomId) {
+                console.log(`[CLIENT] Received state update for different room: ${remoteRoomId}, current: ${roomId}`);
+                return; // Ignore if not for the current room
+            }
+
+            console.log("[CLIENT] Received canvas state update for room:", roomId, "New paths count:", newRemotePaths.length);
+            setPaths(newRemotePaths);
+              pathsRef.current = newRemotePaths;
+             setRedoStack([]);
+             redraw(newRemotePaths);
+        });
+         return () => socket.off("canvas-state-update");
+    }, [roomId, setPaths, redraw]); 
 
   const getMousePos = (e) => {
     const canvas = canvasRef.current;

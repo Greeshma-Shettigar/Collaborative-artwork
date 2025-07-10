@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 import hero from './hero-bg.jpg';
 import art1 from './art1.jpg';
-import art2 from './art2.jpg';
+import art2 from './art2.jpg'; 
 import art3 from './art3.jpg';
 
 export default function LandingPage() {

@@ -15,7 +15,7 @@ connectDB();
 
 app.use(cors({
   origin: [
-    "http://localhost:5174",
+    "http://localhost:5173",
     "https://collaborative-artwork-r1euw3rrz-greeshma-shettigars-projects.vercel.app",
     "https://collaborative-artwork-4n20zomff-greeshma-shettigars-projects.vercel.app",
     "https://collaborative-artwork-d5e6xnhon-greeshma-shettigars-projects.vercel.app",
