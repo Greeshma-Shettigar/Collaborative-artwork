@@ -151,31 +151,23 @@ const Canvas = () => {
       socket.off("flood-fill");
     };
   }, []);
-   useEffect(() => {
-       
+  useEffect(() => {
         socket.on("canvas-state-update", ({ roomId: remoteRoomId, paths: newRemotePaths }) => {
             if (remoteRoomId !== roomId) {
-                console.log(`Received state update for different room: ${remoteRoomId}, current: ${roomId}`);
-                return; 
+                console.log(`[CLIENT] Received state update for different room: ${remoteRoomId}, current: ${roomId}`);
+                return; // Ignore if not for the current room
             }
 
-            console.log("Received canvas state update for room:", roomId);
-
-            // Update the local `paths` state with the authoritative state from the server.
+            console.log("[CLIENT] Received canvas state update for room:", roomId, "New paths count:", newRemotePaths.length);
             setPaths(newRemotePaths);
-
-            pathsRef.current = newRemotePaths;
-
-            
-            setRedoStack([]);
-
-            // Finally, redraw the canvas to reflect the new state.
-            redraw(newRemotePaths);
+              pathsRef.current = newRemotePaths;
+             setRedoStack([]);
+             redraw(newRemotePaths);
         });
-
-        // Clean up the socket listener when the component unmounts or dependencies change.
-        return () => socket.off("canvas-state-update");
-    }, [roomId, setPaths]);
+         return () => socket.off("canvas-state-update");
+    }, [roomId, setPaths, redraw]);
+  
+            
 
   const redraw = (customPaths = pathsRef.current) => {
     const ctx = ctxRef.current;
@@ -428,9 +420,9 @@ const Canvas = () => {
     setPaths(newPaths);
     setRedoStack([...redoStack, last]);
     redraw(newPaths);
-    socket.emit("undo-redo-action", {
-        type: "undo",
+    socket.emit("canvas-state-update", {
         roomId: roomId,
+        paths: newPaths // Send the current authoritative paths AFTER undo
     });
   };
 
@@ -442,9 +434,9 @@ const Canvas = () => {
     setPaths(updatedPaths);
     setRedoStack(newRedo);
     redraw(updatedPaths);
-    socket.emit("undo-redo-action", {
-        type: "redo",
+    socket.emit("canvas-state-update", {
         roomId: roomId,
+        paths: updatedPaths // Send the current authoritative paths AFTER redo
     });
   };
 
