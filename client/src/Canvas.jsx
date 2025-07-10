@@ -132,6 +132,7 @@ const Canvas = () => {
                 );
                 ctx.putImageData(img, 0, 0);
             } else {
+               console.warn("Received fill item without imageData. Attempting local flood fill (potential inconsistency).");
                 floodFill(item.x, item.y, item.color, true);
             }
         }
@@ -150,6 +151,31 @@ const Canvas = () => {
       socket.off("flood-fill");
     };
   }, []);
+   useEffect(() => {
+       
+        socket.on("canvas-state-update", ({ roomId: remoteRoomId, paths: newRemotePaths }) => {
+            if (remoteRoomId !== roomId) {
+                console.log(`Received state update for different room: ${remoteRoomId}, current: ${roomId}`);
+                return; 
+            }
+
+            console.log("Received canvas state update for room:", roomId);
+
+            // Update the local `paths` state with the authoritative state from the server.
+            setPaths(newRemotePaths);
+
+            pathsRef.current = newRemotePaths;
+
+            
+            setRedoStack([]);
+
+            // Finally, redraw the canvas to reflect the new state.
+            redraw(newRemotePaths);
+        });
+
+        // Clean up the socket listener when the component unmounts or dependencies change.
+        return () => socket.off("canvas-state-update");
+    }, [roomId, setPaths]);
 
   const redraw = (customPaths = pathsRef.current) => {
     const ctx = ctxRef.current;
@@ -402,6 +428,10 @@ const Canvas = () => {
     setPaths(newPaths);
     setRedoStack([...redoStack, last]);
     redraw(newPaths);
+    socket.emit("undo-redo-action", {
+        type: "undo",
+        roomId: roomId,
+    });
   };
 
   const redo = () => {
@@ -412,6 +442,10 @@ const Canvas = () => {
     setPaths(updatedPaths);
     setRedoStack(newRedo);
     redraw(updatedPaths);
+    socket.emit("undo-redo-action", {
+        type: "redo",
+        roomId: roomId,
+    });
   };
 
   const downloadImage = () => {
