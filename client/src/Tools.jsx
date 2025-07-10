@@ -291,25 +291,7 @@ console.log("If condition reached");
       >
         🎨 AI Suggest Colors
       </button>
-      {/* ---  AI Style Transfer Button --- */}
-        <button
-          onClick={handleAIStyleTransferClick}
-          title="AI Style Transfer"
-          style={{
-            padding: "6px 12px",
-            borderRadius: "6px",
-            border: "1px solid #ccc", 
-            background: "#fff", 
-            //color: "white", // White text
-            cursor: "pointer",
-            fontWeight: "bold",
-            display: "flex",
-            alignItems: "center",
-            gap: "5px",
-          }}
-        >
-          <FaImage/> AI Style Transfer
-        </button>
+      
 
       {/* ✅ Display AI color swatches if present */}
       {suggestedColors.length > 0 && (
