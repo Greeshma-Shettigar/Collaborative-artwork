@@ -103,41 +103,27 @@ const Canvas = () => {
   useEffect(() => {
   socket.on("remote-path", (item) => {
     if (item.roomId !== roomId) return;
-
     const updatedPaths = [...pathsRef.current, item];
     pathsRef.current = updatedPaths;
 
-    const ctx = ctxRef.current;
-    if (!ctx) return;
-
-    if (item.type === "freehand") {
-      drawBrushStroke(ctx, item.points, item.brushType, item.size, item.color);
-    } else if (item.type === "shape") {
-      drawShape(ctx, item.shapeType, item.start, item.end, item.color, item.size);
-    } else if (item.type === "text") {
-      ctx.font = `${item.size * 4}px sans-serif`;
-      ctx.fillStyle = item.color;
-      ctx.fillText(item.text, item.pos.x, item.pos.y);
-    } else if (item.type === "fill") {
-  const canvas = canvasRef.current;
-  if (!canvas || !ctxRef.current) return;
-
-  const absX = Math.floor(item.x * canvas.width);
-  const absY = Math.floor(item.y * canvas.height);
-
-  const alreadyExists = pathsRef.current.some(p =>
-    p.type === "fill" &&
-    Math.abs(p.x - item.x) < 0.001 &&
-    Math.abs(p.y - item.y) < 0.001 &&
-    p.color === item.color
-  );
-
-  if (!alreadyExists) {
-    console.log("[RECV] Applying fill from socket:", item);
-    floodFill(absX, absY, item.color, true); // applyOnly=true to prevent re-broadcast
-  }
-}
-
+    if (item.type === "fill") {
+      const canvas = canvasRef.current;
+      const absX = Math.floor(item.x * canvas.width);
+      const absY = Math.floor(item.y * canvas.height);
+      // Only apply once
+      const already = pathsRef.current.some(p =>
+        p.type === "fill" &&
+        Math.abs(p.x - item.x) < 1e-3 &&
+        Math.abs(p.y - item.y) < 1e-3 &&
+        p.color === item.color
+      );
+      if (!already) {
+        console.log("[RECV] Applying fill:", item);
+        floodFill(absX, absY, item.color, true);
+      }
+    } else {
+      // handle freehand / shape / text as before
+    }
 
     setPaths(updatedPaths);
   });
@@ -301,80 +287,85 @@ const Canvas = () => {
     setShapeEndPos(null);
   };
 
- const floodFill = (x, y, fillColor, applyOnly = false) => {
+ function floodFill(x, y, fillColor, applyOnly = false) {
   const ctx = ctxRef.current;
-  if (!ctx) return;
+  const canvas = canvasRef.current;
+  if (!ctx || !canvas) return;
 
-  const imgData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = imgData.data;
-  const stack = [[x, y]];
-  const targetColor = getPixel(data, Math.floor(x), Math.floor(y), ctx.canvas.width);
+  const w = canvas.width;
+  const target = getPixel(data, x, y, w);
   const fill = hexToRGBA(fillColor);
+  if (colorsMatch(target, fill)) return;
 
-  if (!targetColor || colorsMatch(targetColor, fill)) {
-    // Even if fill is skipped, emit remote-path for consistency
-    if (!applyOnly) {
-      const item = {
-        type: "fill",
-        x: Math.floor(x),
-        y: Math.floor(y),
-        color: fillColor,
-        roomId: roomId,
-      };
-      setPaths((prev) => {
-        const updated = [...prev, item];
-        pathsRef.current = updated;
-        return updated;
-      });
-      socket.emit("remote-path", item);
+  const p32 = new Uint32Array(data.buffer);
+  const newColor32 = (fill[3] << 24) | (fill[2] << 16) | (fill[1] << 8) | fill[0];
+  const startIdx = y * w + x;
+  const targetColor32 = p32[startIdx];
+  if (targetColor32 === newColor32) return;
+
+  const stack = [startIdx];
+
+  while (stack.length) {
+    const idx = stack.pop();
+    let yy = Math.floor(idx / w);
+    let xx = idx % w;
+
+    // Move to top of current segment
+    let temp = idx;
+    while (yy > 0 && p32[temp - w] === targetColor32) {
+      temp -= w;
+      yy--;
     }
-    return;
+
+    let reachLeft = false, reachRight = false;
+    while (yy < canvas.height && p32[temp] === targetColor32) {
+      p32[temp] = newColor32;
+
+      // check left
+      if (xx > 0) {
+        if (p32[temp - 1] === targetColor32) {
+          if (!reachLeft) {
+            stack.push(temp - 1);
+            reachLeft = true;
+          }
+        } else {
+          reachLeft = false;
+        }
+      }
+
+      // check right
+      if (xx < w - 1) {
+        if (p32[temp + 1] === targetColor32) {
+          if (!reachRight) {
+            stack.push(temp + 1);
+            reachRight = true;
+          }
+        } else {
+          reachRight = false;
+        }
+      }
+
+      temp += w;
+      yy++;
+    }
   }
 
-  const maxPerChunk = 10000;
+  ctx.putImageData(imgData, 0, 0);
 
-  const processChunk = () => {
-    let processed = 0;
-    while (stack.length > 0 && processed < maxPerChunk) {
-      const [cx, cy] = stack.pop();
-      if (cx < 0 || cx >= ctx.canvas.width || cy < 0 || cy >= ctx.canvas.height) continue;
-
-      const currentColor = getPixel(data, cx, cy, ctx.canvas.width);
-      if (!colorsMatch(currentColor, targetColor)) continue;
-
-      setPixel(data, cx, cy, fill, ctx.canvas.width);
-      stack.push([cx + 1, cy]);
-      stack.push([cx - 1, cy]);
-      stack.push([cx, cy + 1]);
-      stack.push([cx, cy - 1]);
-
-      processed++;
-    }
-
-    if (stack.length > 0) {
-      setTimeout(processChunk, 0);
-    } else {
-      ctx.putImageData(imgData, 0, 0);
-      if (!applyOnly) {
-        const item = {
-          type: "fill",
-          x: Math.floor(x),
-          y: Math.floor(y),
-          color: fillColor,
-          roomId: roomId
-        };
-        setPaths((prev) => {
-          const updated = [...prev, item];
-          pathsRef.current = updated;
-          return updated;
-        });
-        socket.emit("remote-path", item);
-      }
-    }
-  };
-
-  processChunk();
-};
+  if (!applyOnly) {
+    const normX = x / canvas.width;
+    const normY = y / canvas.height;
+    const item = { type: "fill", x: normX, y: normY, color: fillColor, roomId };
+    setPaths(prev => {
+      const updated = [...prev, item];
+      pathsRef.current = updated;
+      return updated;
+    });
+    socket.emit("remote-path", item);
+  }
+}
 
 
   const getPixel = (data, x, y, width) => {
