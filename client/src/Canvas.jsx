@@ -301,50 +301,63 @@ const Canvas = () => {
 
   const floodFill = (x, y, fillColor, applyOnly = false) => {
   const ctx = ctxRef.current;
-  const canvas = canvasRef.current;
-const relativeX = x / canvas.width;
-const relativeY = y / canvas.height;
   if (!ctx) return;
 
   const imgData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
   const data = imgData.data;
   const stack = [[x, y]];
-  const targetColor = getPixel(data, x, y, ctx.canvas.width);
+  const targetColor = getPixel(data, Math.floor(x), Math.floor(y), ctx.canvas.width);
   const fill = hexToRGBA(fillColor);
 
-  if (!targetColor || colorsMatch(targetColor, fill)) return;
-
-  while (stack.length) {
-    const [cx, cy] = stack.pop();
-    if (cx < 0 || cy < 0 || cx >= ctx.canvas.width || cy >= ctx.canvas.height) continue;
-
-    const currentColor = getPixel(data, cx, cy, ctx.canvas.width);
-    if (!colorsMatch(currentColor, targetColor)) continue;
-
-    setPixel(data, cx, cy, fill, ctx.canvas.width);
-    stack.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
+  if (!targetColor || colorsMatch(targetColor, fill)) {
+    return;
   }
 
-  ctx.putImageData(imgData, 0, 0);
+  let count = 0;
+  const maxPerChunk = 10000;
 
-  if (!applyOnly) {
-  const canvas = canvasRef.current;
-  const item = {
-    type: "fill",
-    x: x / canvas.width,   // ✅ Send relative x
-    y: y / canvas.height,  // ✅ Send relative y
-    color: fillColor,
-    roomId: roomId
+  const processChunk = () => {
+    let processed = 0;
+    while (stack.length > 0 && processed < maxPerChunk) {
+      const [cx, cy] = stack.pop();
+      if (cx < 0 || cx >= ctx.canvas.width || cy < 0 || cy >= ctx.canvas.height) continue;
+
+      const currentColor = getPixel(data, cx, cy, ctx.canvas.width);
+      if (!colorsMatch(currentColor, targetColor)) continue;
+
+      setPixel(data, cx, cy, fill, ctx.canvas.width);
+      stack.push([cx + 1, cy]);
+      stack.push([cx - 1, cy]);
+      stack.push([cx, cy + 1]);
+      stack.push([cx, cy - 1]);
+
+      processed++;
+      count++;
+    }
+
+    if (stack.length > 0) {
+      setTimeout(processChunk, 0); // Let the browser breathe
+    } else {
+      ctx.putImageData(imgData, 0, 0);
+      if (!applyOnly) {
+        const item = {
+          type: "fill",
+          x: Math.floor(x),
+          y: Math.floor(y),
+          color: fillColor,
+          roomId: roomId
+        };
+        setPaths((prev) => {
+          const updated = [...prev, item];
+          pathsRef.current = updated;
+          return updated;
+        });
+        socket.emit("remote-path", item);
+      }
+    }
   };
 
-    setPaths((prev) => {
-      const updated = [...prev, item];
-      pathsRef.current = updated;
-      return updated;
-    });
-
-    socket.emit("remote-path", item);
-  }
+  processChunk();
 };
 
   const getPixel = (data, x, y, width) => {
