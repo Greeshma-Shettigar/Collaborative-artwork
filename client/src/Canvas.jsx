@@ -160,7 +160,7 @@ const Canvas = () => {
         ctx.font = `${item.size * 4}px sans-serif`;
         ctx.fillStyle = item.color;
         ctx.fillText(item.text, item.pos.x, item.pos.y);
-      } } else if (item.type === "fill") {
+      }  else if (item.type === "fill") {
   if (item.imageData) {
     const image = new ImageData(
       new Uint8ClampedArray(item.imageData.data),
