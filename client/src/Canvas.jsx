@@ -107,41 +107,35 @@ const Canvas = () => {
   }, [roomId, me]);
 
   useEffect(() => {
-    socket.on("remote-path", (item) => {
-      if (item.roomId !== roomId) return;
+  socket.on("remote-path", (item) => {
+    if (item.roomId !== roomId) return;
 
-      const updatedPaths = [...pathsRef.current, item];
-      pathsRef.current = updatedPaths;
+    const updatedPaths = [...pathsRef.current, item];
+    pathsRef.current = updatedPaths;
 
-      if (ctxRef.current) {
-        const ctx = ctxRef.current;
-        if (item.type === "freehand") {
-          drawBrushStroke(ctx, item.points, item.brushType, item.size, item.color);
-        } else if (item.type === "shape") {
-          drawShape(ctx, item.shapeType, item.start, item.end, item.color, item.size);
-        } else if (item.type === "text") {
-          ctx.font = `${item.size * 4}px sans-serif`;
-          ctx.fillStyle = item.color;
-          ctx.fillText(item.text, item.pos.x, item.pos.y);
-        } else if (item.type === "fill") {
-            if (item.imageData) {
-                const img = new ImageData(
-                    new Uint8ClampedArray(Object.values(item.imageData.data)),
-                    item.imageData.width,
-                    item.imageData.height
-                );
-                ctx.putImageData(img, 0, 0);
-            } else {
-               console.warn("Received fill item without imageData. Attempting local flood fill (potential inconsistency).");
-                floodFill(item.x, item.y, item.color, true);
-            }
-        }
+    if (ctxRef.current) {
+      const ctx = ctxRef.current;
+
+      if (item.type === "freehand") {
+        drawBrushStroke(ctx, item.points, item.brushType, item.size, item.color);
+      } else if (item.type === "shape") {
+        drawShape(ctx, item.shapeType, item.start, item.end, item.color, item.size);
+      } else if (item.type === "text") {
+        ctx.font = `${item.size * 4}px sans-serif`;
+        ctx.fillStyle = item.color;
+        ctx.fillText(item.text, item.pos.x, item.pos.y);
+      } else if (item.type === "fill") {
+        // Always run local fill algorithm (no imageData syncing)
+        floodFill(item.x, item.y, item.color, true);
       }
-      setPaths(updatedPaths);
-    });
+    }
 
-    return () => socket.off("remote-path");
-  }, [roomId]);
+    setPaths(updatedPaths);
+  });
+
+  return () => socket.off("remote-path");
+}, [roomId]);
+
 
   useEffect(() => {
     socket.on("flood-fill", ({ x, y, fillColor }) => {
@@ -302,72 +296,48 @@ const Canvas = () => {
   };
 
   const floodFill = (x, y, fillColor, applyOnly = false) => {
-    const ctx = ctxRef.current;
-    if (!ctx) return;
+  const ctx = ctxRef.current;
+  if (!ctx) return;
 
-    const imgData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
-    const data = imgData.data;
-    const stack = [[x, y]];
-    const targetColor = getPixel(data, Math.floor(x), Math.floor(y), ctx.canvas.width);
+  const imgData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+  const data = imgData.data;
+  const stack = [[x, y]];
+  const targetColor = getPixel(data, x, y, ctx.canvas.width);
+  const fill = hexToRGBA(fillColor);
 
-    const fill = hexToRGBA(fillColor);
+  if (!targetColor || colorsMatch(targetColor, fill)) return;
 
-    if (!targetColor || colorsMatch(targetColor, fill)) {
-      if (!applyOnly) {
-          const item = {
-              type: "fill",
-              x: Math.floor(x),
-              y: Math.floor(y),
-              color: fillColor,
-              roomId: roomId,
-          };
-          setPaths((prev) => {
-              const updated = [...prev, item];
-              pathsRef.current = updated;
-              return updated;
-          });
-          socket.emit("remote-path", item);
-      }
-      return;
-    }
+  while (stack.length) {
+    const [cx, cy] = stack.pop();
+    if (cx < 0 || cy < 0 || cx >= ctx.canvas.width || cy >= ctx.canvas.height) continue;
 
-    while (stack.length) {
-      const [cx, cy] = stack.pop();
-      if (cx < 0 || cx >= ctx.canvas.width || cy < 0 || cy >= ctx.canvas.height) continue;
+    const currentColor = getPixel(data, cx, cy, ctx.canvas.width);
+    if (!colorsMatch(currentColor, targetColor)) continue;
 
-      const currentColor = getPixel(data, cx, cy, ctx.canvas.width);
-      if (!colorsMatch(currentColor, targetColor)) continue;
+    setPixel(data, cx, cy, fill, ctx.canvas.width);
+    stack.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
+  }
 
-      setPixel(data, cx, cy, fill, ctx.canvas.width);
-      stack.push([cx + 1, cy]);
-      stack.push([cx - 1, cy]);
-      stack.push([cx, cy + 1]);
-      stack.push([cx, cy - 1]);
-    }
+  ctx.putImageData(imgData, 0, 0);
 
-    ctx.putImageData(imgData, 0, 0);
+  if (!applyOnly) {
+    const item = {
+      type: "fill",
+      x: Math.floor(x),
+      y: Math.floor(y),
+      color: fillColor,
+      roomId: roomId
+    };
 
-    if (!applyOnly) {
-      const item = {
-        type: "fill",
-        x: Math.floor(x),
-        y: Math.floor(y),
-        color: fillColor,
-        roomId: roomId,
-        imageData: {
-            data: Array.from(imgData.data),
-            width: imgData.width,
-            height: imgData.height
-        }
-      };
-      setPaths((prev) => {
-        const updated = [...prev, item];
-        pathsRef.current = updated;
-        return updated;
-      });
-      socket.emit("remote-path", item);
-    }
-  };
+    setPaths((prev) => {
+      const updated = [...prev, item];
+      pathsRef.current = updated;
+      return updated;
+    });
+
+    socket.emit("remote-path", item);
+  }
+};
 
   const getPixel = (data, x, y, width) => {
     const i = (y * width + x) * 4;
