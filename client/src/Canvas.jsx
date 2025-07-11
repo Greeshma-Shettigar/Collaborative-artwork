@@ -125,10 +125,12 @@ const Canvas = () => {
         ctx.fillStyle = item.color;
         ctx.fillText(item.text, item.pos.x, item.pos.y);
       } else if (item.type === "fill") {
-        const canvas = canvasRef.current;
-  const absX = Math.floor(item.x * canvas.width);
-  const absY = Math.floor(item.y * canvas.height);
-  floodFill(absX, absY, item.color, true);
+         const canvas = canvasRef.current;
+  if (canvas) {
+    const absX = Math.floor(item.x * canvas.width);   // Convert back to absolute
+    const absY = Math.floor(item.y * canvas.height);
+    floodFill(absX, absY, item.color, true);
+  }
       }
     }
 
@@ -326,13 +328,14 @@ const relativeY = y / canvas.height;
   ctx.putImageData(imgData, 0, 0);
 
   if (!applyOnly) {
-    const item = {
-  type: "fill",
-  x: relativeX,
-  y: relativeY,
-  color: fillColor,
-  roomId: roomId
-};
+  const canvas = canvasRef.current;
+  const item = {
+    type: "fill",
+    x: x / canvas.width,   // ✅ Send relative x
+    y: y / canvas.height,  // ✅ Send relative y
+    color: fillColor,
+    roomId: roomId
+  };
 
     setPaths((prev) => {
       const updated = [...prev, item];
