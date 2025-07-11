@@ -120,7 +120,7 @@ const Canvas = () => {
       ctx.fillText(item.text, item.pos.x, item.pos.y);
     } else if (item.type === "fill") {
   const canvas = canvasRef.current;
-  if (!canvas) return;
+  if (!canvas || !ctxRef.current) return;
 
   const absX = Math.floor(item.x * canvas.width);
   const absY = Math.floor(item.y * canvas.height);
@@ -301,37 +301,52 @@ const Canvas = () => {
     setShapeEndPos(null);
   };
 
-  const floodFill = (x, y, fillColor, applyOnly = false) => {
+ const floodFill = (x, y, fillColor, applyOnly = false) => {
   const ctx = ctxRef.current;
-  const canvas = canvasRef.current;
-  if (!ctx || !canvas) return;
+  if (!ctx) return;
 
-  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const imgData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
   const data = imgData.data;
   const stack = [[x, y]];
-  const targetColor = getPixel(data, Math.floor(x), Math.floor(y), canvas.width);
+  const targetColor = getPixel(data, Math.floor(x), Math.floor(y), ctx.canvas.width);
   const fill = hexToRGBA(fillColor);
 
-  if (!targetColor || colorsMatch(targetColor, fill)) return;
+  if (!targetColor || colorsMatch(targetColor, fill)) {
+    // Even if fill is skipped, emit remote-path for consistency
+    if (!applyOnly) {
+      const item = {
+        type: "fill",
+        x: Math.floor(x),
+        y: Math.floor(y),
+        color: fillColor,
+        roomId: roomId,
+      };
+      setPaths((prev) => {
+        const updated = [...prev, item];
+        pathsRef.current = updated;
+        return updated;
+      });
+      socket.emit("remote-path", item);
+    }
+    return;
+  }
 
-  const visited = new Set();
   const maxPerChunk = 10000;
 
   const processChunk = () => {
     let processed = 0;
-    while (stack.length && processed < maxPerChunk) {
+    while (stack.length > 0 && processed < maxPerChunk) {
       const [cx, cy] = stack.pop();
-      if (cx < 0 || cx >= canvas.width || cy < 0 || cy >= canvas.height) continue;
+      if (cx < 0 || cx >= ctx.canvas.width || cy < 0 || cy >= ctx.canvas.height) continue;
 
-      const index = cy * canvas.width + cx;
-      if (visited.has(index)) continue;
-      visited.add(index);
-
-      const currentColor = getPixel(data, cx, cy, canvas.width);
+      const currentColor = getPixel(data, cx, cy, ctx.canvas.width);
       if (!colorsMatch(currentColor, targetColor)) continue;
 
-      setPixel(data, cx, cy, fill, canvas.width);
-      stack.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
+      setPixel(data, cx, cy, fill, ctx.canvas.width);
+      stack.push([cx + 1, cy]);
+      stack.push([cx - 1, cy]);
+      stack.push([cx, cy + 1]);
+      stack.push([cx, cy - 1]);
 
       processed++;
     }
@@ -340,28 +355,20 @@ const Canvas = () => {
       setTimeout(processChunk, 0);
     } else {
       ctx.putImageData(imgData, 0, 0);
-
-      // Broadcast to others only if not applyOnly
       if (!applyOnly) {
-        const normX = x / canvas.width;
-        const normY = y / canvas.height;
-
         const item = {
           type: "fill",
-          x: normX,
-          y: normY,
+          x: Math.floor(x),
+          y: Math.floor(y),
           color: fillColor,
           roomId: roomId
         };
-
-        setPaths(prev => {
+        setPaths((prev) => {
           const updated = [...prev, item];
           pathsRef.current = updated;
           return updated;
         });
-
         socket.emit("remote-path", item);
-        console.log("Emit: fill", item);
       }
     }
   };
