@@ -125,8 +125,10 @@ const Canvas = () => {
         ctx.fillStyle = item.color;
         ctx.fillText(item.text, item.pos.x, item.pos.y);
       } else if (item.type === "fill") {
-        // Always run local fill algorithm (no imageData syncing)
-        floodFill(item.x, item.y, item.color, true);
+        const canvas = canvasRef.current;
+  const absX = Math.floor(item.x * canvas.width);
+  const absY = Math.floor(item.y * canvas.height);
+  floodFill(absX, absY, item.color, true);
       }
     }
 
@@ -297,6 +299,9 @@ const Canvas = () => {
 
   const floodFill = (x, y, fillColor, applyOnly = false) => {
   const ctx = ctxRef.current;
+  const canvas = canvasRef.current;
+const relativeX = x / canvas.width;
+const relativeY = y / canvas.height;
   if (!ctx) return;
 
   const imgData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -322,12 +327,12 @@ const Canvas = () => {
 
   if (!applyOnly) {
     const item = {
-      type: "fill",
-      x: Math.floor(x),
-      y: Math.floor(y),
-      color: fillColor,
-      roomId: roomId
-    };
+  type: "fill",
+  x: relativeX,
+  y: relativeY,
+  color: fillColor,
+  roomId: roomId
+};
 
     setPaths((prev) => {
       const updated = [...prev, item];
