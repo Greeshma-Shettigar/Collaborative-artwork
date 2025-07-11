@@ -340,6 +340,8 @@ const Canvas = () => {
       ctx.putImageData(imgData, 0, 0);
       if (!applyOnly) {
   const canvas = canvasRef.current;
+  if (!canvas) return;
+
   const normX = x / canvas.width;
   const normY = y / canvas.height;
 
@@ -350,6 +352,7 @@ const Canvas = () => {
     color: fillColor,
     roomId: roomId
   };
+
   setPaths((prev) => {
     const updated = [...prev, item];
     pathsRef.current = updated;
@@ -357,6 +360,7 @@ const Canvas = () => {
   });
   socket.emit("remote-path", item);
 }
+
 
     }
   };
