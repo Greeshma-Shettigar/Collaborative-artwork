@@ -119,23 +119,25 @@ const Canvas = () => {
       ctx.fillStyle = item.color;
       ctx.fillText(item.text, item.pos.x, item.pos.y);
     } else if (item.type === "fill") {
-      const canvas = canvasRef.current;
-      if (canvas) {
-        const absX = Math.floor(item.x * canvas.width);
-        const absY = Math.floor(item.y * canvas.height);
+  const canvas = canvasRef.current;
+  if (!canvas) return;
 
-        const alreadyExists = pathsRef.current.some(p =>
-          p.type === "fill" &&
-          Math.abs(p.x - item.x) < 0.001 &&
-          Math.abs(p.y - item.y) < 0.001 &&
-          p.color === item.color
-        );
+  const absX = Math.floor(item.x * canvas.width);
+  const absY = Math.floor(item.y * canvas.height);
 
-        if (!alreadyExists) {
-          floodFill(absX, absY, item.color, true);
-        }
-      }
-    }
+  const alreadyExists = pathsRef.current.some(p =>
+    p.type === "fill" &&
+    Math.abs(p.x - item.x) < 0.001 &&
+    Math.abs(p.y - item.y) < 0.001 &&
+    p.color === item.color
+  );
+
+  if (!alreadyExists) {
+    console.log("[RECV] Applying fill from socket:", item);
+    floodFill(absX, absY, item.color, true); // applyOnly=true to prevent re-broadcast
+  }
+}
+
 
     setPaths(updatedPaths);
   });
@@ -300,68 +302,71 @@ const Canvas = () => {
   };
 
   const floodFill = (x, y, fillColor, applyOnly = false) => {
-  if (!ctx) return;
+  const ctx = ctxRef.current;
   const canvas = canvasRef.current;
-  const imgData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+  if (!ctx || !canvas) return;
+
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = imgData.data;
   const stack = [[x, y]];
-  const targetColor = getPixel(data, Math.floor(x), Math.floor(y), ctx.canvas.width);
+  const targetColor = getPixel(data, Math.floor(x), Math.floor(y), canvas.width);
   const fill = hexToRGBA(fillColor);
 
   if (!targetColor || colorsMatch(targetColor, fill)) {
     return;
   }
 
-  let count = 0;
   const maxPerChunk = 10000;
+  const processed = new Set(); // to prevent overflow
 
   const processChunk = () => {
-    let processed = 0;
-    while (stack.length > 0 && processed < maxPerChunk) {
-      const [cx, cy] = stack.pop();
-      if (cx < 0 || cx >= ctx.canvas.width || cy < 0 || cy >= ctx.canvas.height) continue;
+    let chunkCount = 0;
 
-      const currentColor = getPixel(data, cx, cy, ctx.canvas.width);
+    while (stack.length && chunkCount < maxPerChunk) {
+      const [cx, cy] = stack.pop();
+      if (cx < 0 || cx >= canvas.width || cy < 0 || cy >= canvas.height) continue;
+
+      const idx = cy * canvas.width + cx;
+      if (processed.has(idx)) continue;
+      processed.add(idx);
+
+      const currentColor = getPixel(data, cx, cy, canvas.width);
       if (!colorsMatch(currentColor, targetColor)) continue;
 
-      setPixel(data, cx, cy, fill, ctx.canvas.width);
-      stack.push([cx + 1, cy]);
-      stack.push([cx - 1, cy]);
-      stack.push([cx, cy + 1]);
-      stack.push([cx, cy - 1]);
+      setPixel(data, cx, cy, fill, canvas.width);
 
-      processed++;
-      count++;
+      stack.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
+
+      chunkCount++;
     }
 
     if (stack.length > 0) {
-      setTimeout(processChunk, 0); // Let the browser breathe
+      setTimeout(processChunk, 0);
     } else {
       ctx.putImageData(imgData, 0, 0);
+
+      // 🚨 SEND TO OTHER CLIENTS
       if (!applyOnly) {
-  const canvas = canvasRef.current;
-  if (!canvas) return;
+        const normX = x / canvas.width;
+        const normY = y / canvas.height;
 
-  const normX = x / canvas.width;
-  const normY = y / canvas.height;
+        const item = {
+          type: "fill",
+          x: normX,
+          y: normY,
+          color: fillColor,
+          roomId: roomId,
+        };
 
-  const item = {
-    type: "fill",
-    x: normX,
-    y: normY,
-    color: fillColor,
-    roomId: roomId
-  };
+        setPaths((prev) => {
+          const updated = [...prev, item];
+          pathsRef.current = updated;
+          return updated;
+        });
 
-  setPaths((prev) => {
-    const updated = [...prev, item];
-    pathsRef.current = updated;
-    return updated;
-  });
-  socket.emit("remote-path", item);
-}
-
-
+        socket.emit("remote-path", item);
+        console.log("[SEND] Emitted normalized fill:", item);
+      }
     }
   };
 
