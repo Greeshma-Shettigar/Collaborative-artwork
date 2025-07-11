@@ -4,7 +4,7 @@ import socket from "./socket";
 import ChatBot from "../public/ChatBot Widget/ChatBot";
 
 import {
-  FaPencilAlt, FaFillDrip, FaEraser, FaFont, FaDownload,
+  FaPencilAlt, FaFillDrip, FaEraser, FaFont,
   FaUndo, FaRedo, FaPaintBrush, FaArrowRight, FaArrowLeft,
   FaArrowUp, FaArrowDown, FaStar
 } from "react-icons/fa";
@@ -23,7 +23,7 @@ const brushTypes = [
   { name: "Marker", icon: "🖍" },
   { name: "Oil", icon: "🛢" },
   { name: "Watercolor", icon: "💧" },
-  { name: "Texture", icon: "🎨" },
+  
 ];
 
 const shapeTypes = [
@@ -122,7 +122,7 @@ const Tools = ({
         </div>
 
         <button onClick={() => onSelectTool("eraser")} title="Eraser"><FaEraser color="#d9534f" /></button>
-        <button onClick={() => onSelectTool("text")} title="Text"><FaFont color="#5cb85c" /></button>
+       
         <button onClick={() => onSelectTool("fill")} title="Paint Fill"><FaFillDrip color="#f0ad4e" /></button>
 
         {/* Shapes Panel */}
@@ -137,7 +137,7 @@ const Tools = ({
             }}>
               {shapeTypes.map(shape => (
                 <div key={shape.name} title={shape.name} onClick={() => {
-                  onShapeSelect(shape.name);
+                  onShapeSelect(shape.name); 
                   onSelectTool("shape");
                   setShowShapePanel(false);
                 }} style={{
@@ -172,7 +172,7 @@ const Tools = ({
 
         <button onClick={onUndo} title="Undo"><FaUndo /></button>
         <button onClick={onRedo} title="Redo"><FaRedo /></button>
-        <button onClick={onDownload} title="Download"><FaDownload /></button>
+       
 
         {/* AI Suggest Colors */}
         <button onClick={fetchSuggestedColors} style={buttonStyle}>🎨 AI Suggest Colors</button>
@@ -216,7 +216,7 @@ const Tools = ({
 
 const buttonStyle = {
   padding: "6px 12px",
-  borderRadius: "6px",
+borderRadius: "6px",
   border: "1px solid #ccc",
   background: "#fff",
   cursor: "pointer",

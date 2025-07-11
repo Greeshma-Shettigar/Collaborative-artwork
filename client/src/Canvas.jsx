@@ -198,7 +198,7 @@ const Canvas = () => {
             console.log("[CLIENT] Received canvas state update for room:", roomId, "New paths count:", newRemotePaths.length);
             setPaths(newRemotePaths);
               pathsRef.current = newRemotePaths;
-             setRedoStack([]);
+            //  setRedoStack([]);
              redraw(newRemotePaths);
         });
          return () => socket.off("canvas-state-update");
@@ -433,39 +433,80 @@ const Canvas = () => {
     }
   };
 
-  const undo = () => {
-    if (paths.length === 0) return;
+  const 
+  undo = () => {
+    if (paths.length === 0){console.log("No paths00"); return;}
     const newPaths = [...paths];
+    console.log("Current paths before undo:", newPaths); // <-- ADD THIS
+    console.log("Redo stack before undo:", redoStack); // <-- ADD THIS
     const last = newPaths.pop();
+    console.log("Last item to undo:", last); // <-- ADD THIS
+    console.log("New paths after removing last item:", newPaths); // <-- ADD THIS
+    console.log("Attempting to undo item:", last); // <-- ADD THIS
     setPaths(newPaths);
     setRedoStack([...redoStack, last]);
-    redraw(newPaths);
+   redraw(newPaths);
     socket.emit("canvas-state-update", {
         roomId: roomId,
-        paths: newPaths // Send the current authoritative paths AFTER undo
+        paths: newPaths ,
+        source: socket.id // Send the current authoritative paths AFTER undo
     });
   };
+
+  useEffect(() => {
+    console.log("Redo stack updated:", redoStack); 
+  }, [redoStack]);
 
   const redo = () => {
-    if (redoStack.length === 0) return;
-    const newRedo = [...redoStack];
-    const last = newRedo.pop();
-    const updatedPaths = [...paths, last];
-    setPaths(updatedPaths);
-    setRedoStack(newRedo);
-    redraw(updatedPaths);
-    socket.emit("canvas-state-update", {
-        roomId: roomId,
-        paths: updatedPaths // Send the current authoritative paths AFTER redo
-    });
-  };
+    if (redoStack.length === 0) {
+      console.log("Redo stack is empty.");
+      return;
+    }
 
+    const newRedoStack = [...redoStack];
+    const itemToRedo = newRedoStack.pop(); 
+    
+    console.log("Attempting to redo item:", itemToRedo); // <-- ADD THIS
+    console.log("Current paths (before redo):", pathsRef.current); // <-- ADD THIS
+
+    const updatedPaths = [...pathsRef.current, itemToRedo]; 
+    
+    setPaths(updatedPaths);
+    pathsRef.current = updatedPaths; 
+    setRedoStack(newRedoStack);
+
+    console.log("New paths (after redo state update):", updatedPaths); // <-- ADD THIS
+
+    redraw(updatedPaths); 
+
+    socket.emit("canvas-state-update", {
+        roomId: roomId,
+        paths: updatedPaths ,
+source: socket.id 
+    });
+  };
   const downloadImage = () => {
     const link = document.createElement("a");
     link.download = "drawing.png";
     link.href = canvasRef.current.toDataURL("image/png");
     link.click();
   };
+
+  useEffect(() => {
+    window.addEventListener("keydown", (e) => {
+      console.log("Key pressed:", e.ctrlKey, e.key); // Log the key pressed
+      if (e.ctrlKey && e.key == "z") {
+        console.log("Undo triggered");
+        e.preventDefault();
+        console.log("Calling undo function");
+        undo();
+        console.log("Current paths before undo:", paths); // Log current paths before undo
+      } else if (e.ctrlKey && e.key == "y") {
+        e.preventDefault();
+        redo();
+      }
+    })
+  }, [])
 
  
 

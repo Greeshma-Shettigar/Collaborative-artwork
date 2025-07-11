@@ -4,7 +4,7 @@ import { io } from "socket.io-client";
 const server =
   import.meta.env.MODE === "development"
     ? "http://localhost:3000"
-    : import.meta.env.VITE_SOCKET_URL || "https://collaborative-artwork-gf2e.onrender.com";
+    : import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
 
 const connectionOptions = {
   "force new connection": true,
