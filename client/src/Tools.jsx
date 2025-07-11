@@ -177,8 +177,6 @@ const Tools = ({
         {/* AI Suggest Colors */}
         <button onClick={fetchSuggestedColors} style={buttonStyle}>🎨 AI Suggest Colors</button>
 
-        {/* Chatbot Toggle */}
-        <button onClick={() => setShowChatbot(prev => !prev)} style={buttonStyle}>Chatbot</button>
 
         {/* Display Suggested Colors */}
         {suggestedColors.length > 0 && (
