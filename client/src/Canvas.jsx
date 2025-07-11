@@ -227,6 +227,8 @@ const Canvas = () => {
     } else if (tool === "fill") {
       const x = Math.floor(pos.x);
       const y = Math.floor(pos.y);
+      socket.emit("flood-fill", { x, y, fillColor: color, roomId });
+      console.log("[SEND] Flood fill request:", { x, y, fillColor: color, roomId });
       floodFill(x, y, color);
     } else if (tool === "text") {
       setTextPos(pos);
