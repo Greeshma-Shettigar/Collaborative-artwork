@@ -488,9 +488,7 @@ const Canvas = () => {
           }}
           selectedShape={tool === "shape" ? selectedShape : null}
           roomId={roomId}
-          // --- NEW PROP PASSED TO TOOLS ---
-          onToggleAIStyleTransferUI={toggleAIStyleTransferUI}
-          // --- END NEW PROP ---
+         
         />
       </div>
 
@@ -570,73 +568,7 @@ const Canvas = () => {
           </form>
         )}
 
-        {/* --- AI Style Transfer UI (Conditionally Rendered) --- */}
-        {showAIStyleTransferUI && (
-          <div
-            style={{
-              marginTop: 20,
-              padding: '15px',
-              border: '1px solid #ddd',
-              borderRadius: '8px',
-              background: '#f9f9f9',
-              position: 'relative',
-              maxWidth: '800px',
-              width: '90%', // Make it responsive
-              margin: '20px auto',
-              textAlign: 'center'
-            }}
-          >
-            <h3>AI Style Transfer</h3>
-            <input
-              type="text"
-              value={stylePrompt}
-              onChange={(e) => setStylePrompt(e.target.value)}
-              placeholder="e.g., 'turn into Disney style', 'convert to anime art', 'make it look like a Pixar movie'"
-              style={{ padding: '10px', width: 'calc(100% - 120px)', marginRight: '10px', border: '1px solid #ccc', borderRadius: '4px' }}
-              disabled={isApplyingStyle}
-            />
-            <button
-              onClick={handleStyleApply}
-              style={{ padding: '10px 15px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-              disabled={isApplyingStyle}
-            >
-              {isApplyingStyle ? 'Applying Style...' : '✨ Apply Style'}
-            </button>
-            {styleError && <p style={{ color: 'red', marginTop: 10, fontSize: '0.9em' }}>Error: {styleError}</p>}
-
-            {styledImage && (
-              <div
-                style={{
-                  marginTop: 20,
-                  paddingTop: 15,
-                  borderTop: '1px solid #eee',
-                  textAlign: 'center'
-                }}
-              >
-                <h4>Transformed Artwork</h4>
-                <img src={styledImage} alt="Styled" style={{ maxWidth: "100%", height: "auto", border: "1px solid #eee", borderRadius: "4px" }} />
-                <div style={{ display: 'flex', gap: '10px', marginTop: '15px', justifyContent: 'center' }}>
-                  <a href={styledImage} download="styled_artwork.png" style={{ textDecoration: 'none' }}>
-                    <button style={{ padding: '10px 15px', background: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                      Download Styled Image
-                    </button>
-                  </a>
-                  <button
-                    onClick={() => {
-                      URL.revokeObjectURL(styledImage);
-                      setStyledImage(null);
-                      setStylePrompt("");
-                    }}
-                    style={{ padding: '10px 15px', background: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                  >
-                    Clear Transformed Image
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-        {/* --- END AI Style Transfer UI --- */}
+        
 
       </div>
     </div>
