@@ -374,7 +374,9 @@ const Canvas = () => {
       pathsRef.current = updated;
       return updated;
     });
+    console.log("Emitting item", item)
     socket.emit("remote-path", item);
+    console.log("Emitted item", item)
   }
 };
 
