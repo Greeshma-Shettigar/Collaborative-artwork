@@ -160,18 +160,17 @@ const Canvas = () => {
         ctx.font = `${item.size * 4}px sans-serif`;
         ctx.fillStyle = item.color;
         ctx.fillText(item.text, item.pos.x, item.pos.y);
-      } else if (item.type === "fill") {
-          if (item.imageData) {
-              const img = new ImageData(
-                  new Uint8ClampedArray(Object.values(item.imageData.data)),
-                  item.imageData.width,
-                  item.imageData.height
-              );
-              ctx.putImageData(img, 0, 0);
-          } else {
-              floodFill(item.x, item.y, item.color, true);
-          }
-      }
+      } } else if (item.type === "fill") {
+  if (item.imageData) {
+    const image = new ImageData(
+      new Uint8ClampedArray(item.imageData.data),
+      item.imageData.width,
+      item.imageData.height
+    );
+    ctx.putImageData(image, 0, 0);
+  }
+}
+
     }
   };
 
@@ -287,7 +286,7 @@ const Canvas = () => {
     setShapeEndPos(null);
   };
 
- function floodFill(x, y, fillColor, applyOnly = false) {
+ const floodFill = (x, y, fillColor, applyOnly = false) => {
   const ctx = ctxRef.current;
   const canvas = canvasRef.current;
   if (!ctx || !canvas) return;
@@ -312,7 +311,6 @@ const Canvas = () => {
     let yy = Math.floor(idx / w);
     let xx = idx % w;
 
-    // Move to top of current segment
     let temp = idx;
     while (yy > 0 && p32[temp - w] === targetColor32) {
       temp -= w;
@@ -323,28 +321,22 @@ const Canvas = () => {
     while (yy < canvas.height && p32[temp] === targetColor32) {
       p32[temp] = newColor32;
 
-      // check left
-      if (xx > 0) {
-        if (p32[temp - 1] === targetColor32) {
-          if (!reachLeft) {
-            stack.push(temp - 1);
-            reachLeft = true;
-          }
-        } else {
-          reachLeft = false;
+      if (xx > 0 && p32[temp - 1] === targetColor32) {
+        if (!reachLeft) {
+          stack.push(temp - 1);
+          reachLeft = true;
         }
+      } else {
+        reachLeft = false;
       }
 
-      // check right
-      if (xx < w - 1) {
-        if (p32[temp + 1] === targetColor32) {
-          if (!reachRight) {
-            stack.push(temp + 1);
-            reachRight = true;
-          }
-        } else {
-          reachRight = false;
+      if (xx < w - 1 && p32[temp + 1] === targetColor32) {
+        if (!reachRight) {
+          stack.push(temp + 1);
+          reachRight = true;
         }
+      } else {
+        reachRight = false;
       }
 
       temp += w;
@@ -355,17 +347,25 @@ const Canvas = () => {
   ctx.putImageData(imgData, 0, 0);
 
   if (!applyOnly) {
-    const normX = x / canvas.width;
-    const normY = y / canvas.height;
-    const item = { type: "fill", x: normX, y: normY, color: fillColor, roomId };
-    setPaths(prev => {
+    const item = {
+      type: "fill",
+      color: fillColor,
+      roomId,
+      imageData: {
+        width: imgData.width,
+        height: imgData.height,
+        data: Array.from(imgData.data), // Flatten to store in socket
+      },
+    };
+    setPaths((prev) => {
       const updated = [...prev, item];
       pathsRef.current = updated;
       return updated;
     });
     socket.emit("remote-path", item);
   }
-}
+};
+
 
 
   const getPixel = (data, x, y, width) => {
