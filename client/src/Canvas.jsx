@@ -113,27 +113,33 @@ const Canvas = () => {
     const updatedPaths = [...pathsRef.current, item];
     pathsRef.current = updatedPaths;
 
-    if (ctxRef.current) {
-      const ctx = ctxRef.current;
+    const ctx = ctxRef.current;
+    if (!ctx) return;
 
-      if (item.type === "freehand") {
-        drawBrushStroke(ctx, item.points, item.brushType, item.size, item.color);
-      } else if (item.type === "shape") {
-        drawShape(ctx, item.shapeType, item.start, item.end, item.color, item.size);
-      } else if (item.type === "text") {
-        ctx.font = `${item.size * 4}px sans-serif`;
-        ctx.fillStyle = item.color;
-        ctx.fillText(item.text, item.pos.x, item.pos.y);
-      } else if (item.type === "fill") {
-         const canvas = canvasRef.current;
-  if (item.type === "fill") {
-  const canvas = canvasRef.current;
-  if (canvas && typeof item.x === 'number' && typeof item.y === 'number') {
-    const absX = Math.floor(item.x * canvas.width);   // 🔁 de-normalize
-    const absY = Math.floor(item.y * canvas.height);
-    floodFill(absX, absY, item.color, true);
-  }
-}
+    if (item.type === "freehand") {
+      drawBrushStroke(ctx, item.points, item.brushType, item.size, item.color);
+    } else if (item.type === "shape") {
+      drawShape(ctx, item.shapeType, item.start, item.end, item.color, item.size);
+    } else if (item.type === "text") {
+      ctx.font = `${item.size * 4}px sans-serif`;
+      ctx.fillStyle = item.color;
+      ctx.fillText(item.text, item.pos.x, item.pos.y);
+    } else if (item.type === "fill") {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const absX = Math.floor(item.x * canvas.width);
+        const absY = Math.floor(item.y * canvas.height);
+
+        const alreadyExists = pathsRef.current.some(p =>
+          p.type === "fill" &&
+          Math.abs(p.x - item.x) < 0.001 &&
+          Math.abs(p.y - item.y) < 0.001 &&
+          p.color === item.color
+        );
+
+        if (!alreadyExists) {
+          floodFill(absX, absY, item.color, true);
+        }
       }
     }
 
@@ -142,6 +148,7 @@ const Canvas = () => {
 
   return () => socket.off("remote-path");
 }, [roomId]);
+
 
 
   useEffect(() => {
@@ -342,23 +349,25 @@ const Canvas = () => {
     } else {
       ctx.putImageData(imgData, 0, 0);
       if (!applyOnly) {
-  const ctx = ctxRef.current;
+  const canvas = canvasRef.current;
+  const normX = x / canvas.width;
+  const normY = y / canvas.height;
 
-        const item = {
-  type: "fill",
-  x: x / canvas.width,
-  y: y / canvas.height,
-  color: fillColor,
-  roomId
-};
+  const item = {
+    type: "fill",
+    x: normX,
+    y: normY,
+    color: fillColor,
+    roomId: roomId
+  };
+  setPaths((prev) => {
+    const updated = [...prev, item];
+    pathsRef.current = updated;
+    return updated;
+  });
+  socket.emit("remote-path", item);
+}
 
-        setPaths((prev) => {
-          const updated = [...prev, item];
-          pathsRef.current = updated;
-          return updated;
-        });
-        socket.emit("remote-path", item);
-      }
     }
   };
 
