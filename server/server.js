@@ -108,8 +108,10 @@ const io = new Server(server, {
       "https://collaborative-artwork-d5e6xnhon-greeshma-shettigars-projects.vercel.app"
     ],
     methods: ["GET", "POST"],
-    credentials: true
-  }
+    credentials: true,
+    
+  },
+  maxHttpBufferSize: 1e8, // Increase buffer size to handle large data
 });
 
 io.on("connection", (socket) => {
