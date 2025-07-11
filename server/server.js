@@ -142,6 +142,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("remote-path", (data) => {
+    console.log("[RECV] Remote path data:", data);
     const roomId = socketToRoom[socket.id];
     if (roomId) {
       socket.to(roomId).emit("remote-path", data);
