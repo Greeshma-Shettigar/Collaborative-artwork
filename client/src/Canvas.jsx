@@ -312,32 +312,28 @@ const Canvas = () => {
   const targetColor = getPixel(data, Math.floor(x), Math.floor(y), canvas.width);
   const fill = hexToRGBA(fillColor);
 
-  if (!targetColor || colorsMatch(targetColor, fill)) {
-    return;
-  }
+  if (!targetColor || colorsMatch(targetColor, fill)) return;
 
+  const visited = new Set();
   const maxPerChunk = 10000;
-  const processed = new Set(); // to prevent overflow
 
   const processChunk = () => {
-    let chunkCount = 0;
-
-    while (stack.length && chunkCount < maxPerChunk) {
+    let processed = 0;
+    while (stack.length && processed < maxPerChunk) {
       const [cx, cy] = stack.pop();
       if (cx < 0 || cx >= canvas.width || cy < 0 || cy >= canvas.height) continue;
 
-      const idx = cy * canvas.width + cx;
-      if (processed.has(idx)) continue;
-      processed.add(idx);
+      const index = cy * canvas.width + cx;
+      if (visited.has(index)) continue;
+      visited.add(index);
 
       const currentColor = getPixel(data, cx, cy, canvas.width);
       if (!colorsMatch(currentColor, targetColor)) continue;
 
       setPixel(data, cx, cy, fill, canvas.width);
-
       stack.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
 
-      chunkCount++;
+      processed++;
     }
 
     if (stack.length > 0) {
@@ -345,7 +341,7 @@ const Canvas = () => {
     } else {
       ctx.putImageData(imgData, 0, 0);
 
-      // 🚨 SEND TO OTHER CLIENTS
+      // Broadcast to others only if not applyOnly
       if (!applyOnly) {
         const normX = x / canvas.width;
         const normY = y / canvas.height;
@@ -355,23 +351,24 @@ const Canvas = () => {
           x: normX,
           y: normY,
           color: fillColor,
-          roomId: roomId,
+          roomId: roomId
         };
 
-        setPaths((prev) => {
+        setPaths(prev => {
           const updated = [...prev, item];
           pathsRef.current = updated;
           return updated;
         });
 
         socket.emit("remote-path", item);
-        console.log("[SEND] Emitted normalized fill:", item);
+        console.log("Emit: fill", item);
       }
     }
   };
 
   processChunk();
 };
+
 
   const getPixel = (data, x, y, width) => {
     const i = (y * width + x) * 4;
