@@ -298,7 +298,7 @@ const Canvas = () => {
   };
 
  const floodFill = (x, y, fillColor, applyOnly = false) => {
-  
+  console.log("[FLOOD FILL] x:", x, "y:", y, "fillColor:", fillColor, "applyOnly:", applyOnly);
   const ctx = ctxRef.current;
   const canvas = canvasRef.current;
   if (!ctx || !canvas) return;
