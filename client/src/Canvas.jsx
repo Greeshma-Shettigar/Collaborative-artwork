@@ -126,11 +126,14 @@ const Canvas = () => {
         ctx.fillText(item.text, item.pos.x, item.pos.y);
       } else if (item.type === "fill") {
          const canvas = canvasRef.current;
-  if (canvas) {
-    const absX = Math.floor(item.x * canvas.width);   // Convert back to absolute
+  if (item.type === "fill") {
+  const canvas = canvasRef.current;
+  if (canvas && typeof item.x === 'number' && typeof item.y === 'number') {
+    const absX = Math.floor(item.x * canvas.width);   // 🔁 de-normalize
     const absY = Math.floor(item.y * canvas.height);
     floodFill(absX, absY, item.color, true);
   }
+}
       }
     }
 
@@ -300,9 +303,8 @@ const Canvas = () => {
   };
 
   const floodFill = (x, y, fillColor, applyOnly = false) => {
-  const ctx = ctxRef.current;
   if (!ctx) return;
-
+  const canvas = canvasRef.current;
   const imgData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
   const data = imgData.data;
   const stack = [[x, y]];
@@ -340,13 +342,16 @@ const Canvas = () => {
     } else {
       ctx.putImageData(imgData, 0, 0);
       if (!applyOnly) {
+  const ctx = ctxRef.current;
+
         const item = {
-          type: "fill",
-          x: Math.floor(x),
-          y: Math.floor(y),
-          color: fillColor,
-          roomId: roomId
-        };
+  type: "fill",
+  x: x / canvas.width,
+  y: y / canvas.height,
+  color: fillColor,
+  roomId
+};
+
         setPaths((prev) => {
           const updated = [...prev, item];
           pathsRef.current = updated;
@@ -440,39 +445,7 @@ const Canvas = () => {
     link.click();
   };
 
-  // --- NEW: Toggle AI Style Transfer UI visibility ---
-  const toggleAIStyleTransferUI = useCallback((forceClose = null) => {
-   console.log("Inside toggleAIStyleTransferUI")
-    setShowAIStyleTransferUI(prev => typeof forceClose === 'boolean' ? forceClose : !prev);
-    // When opening/closing AI UI, we might want to clear existing styled image
-    if (!showAIStyleTransferUI || forceClose) { // If it was hidden, or we're forcing close
-        setStyledImage(null);
-        setStylePrompt("");
-        setStyleError(null);
-    }
-  }, [showAIStyleTransferUI]);
-
-useEffect(()=>console.log("showAIStyleTransferUI", showAIStyleTransferUI), [showAIStyleTransferUI])
-  const handleStyleApply = useCallback(async () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    setIsApplyingStyle(true);
-    setStyleError(null);
-    setStyledImage(null);
-
-    try {
-      const base64 = canvas.toDataURL("image/png");
-      const resultURL = await applyStyle(base64, stylePrompt);
-      setStyledImage(resultURL);
-    } catch (error) {
-      console.error("Failed to apply style:", error);
-      setStyleError(error.message || "An unexpected error occurred during style transfer.");
-    } finally {
-      setIsApplyingStyle(false);
-    }
-  }, [stylePrompt]);
-  // --- END NEW ---
+ 
 
 
   return (
