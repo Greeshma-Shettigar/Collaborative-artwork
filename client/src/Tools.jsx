@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { getColorPalette } from './utils/colorAPI';
 import socket from "./socket";
-import Chatbot from "./Chatbot";
+import ChatBot from "../public/ChatBot Widget/ChatBot";
 
 import {
   FaPencilAlt, FaFillDrip, FaEraser, FaFont, FaDownload,
@@ -210,6 +210,8 @@ const Tools = ({
 
       {/* Chatbot Render */}
       {showChatbot && <Chatbot visible={showChatbot} onClose={() => setShowChatbot(false)} />}
+      <ChatBot/>
+
     </>
   );
 };
