@@ -5,7 +5,7 @@ import { drawBrushStroke, drawShape } from "./drawingUtils";
 import socket from "./socket";
 import { useParams, useLocation } from 'react-router-dom';
 
-import { applyStyle } from './utils/styleTransferAPI';
+
 
 const Canvas = () => {
   const { roomId } = useParams();
@@ -28,13 +28,7 @@ const Canvas = () => {
   const [textInput, setTextInput] = useState("");
   const [textPos, setTextPos] = useState(null);
 
-  // --- NEW STATES FOR STYLE TRANSFER UI VISIBILITY ---
-  const [showAIStyleTransferUI, setShowAIStyleTransferUI] = useState(false); // Controls visibility
-  const [styledImage, setStyledImage] = useState(null);
-  const [stylePrompt, setStylePrompt] = useState("");
-  const [isApplyingStyle, setIsApplyingStyle] = useState(false);
-  const [styleError, setStyleError] = useState(null);
-  // --- END NEW STATES ---
+ 
 
 
   useEffect(() => {
@@ -219,11 +213,7 @@ const Canvas = () => {
   };
 
   const handleMouseDown = (e) => {
-    // --- NEW: Close AI Style Transfer UI if a drawing tool is selected ---
-    if (showAIStyleTransferUI && ["pencil", "brush", "eraser", "shape", "fill", "text"].includes(tool)) {
-        setShowAIStyleTransferUI(false);
-    }
-    // --- END NEW ---
+    
 
     const pos = getMousePos(e);
     setStartPos(pos);
