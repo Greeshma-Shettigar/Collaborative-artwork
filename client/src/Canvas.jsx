@@ -102,6 +102,7 @@ const Canvas = () => {
 
   useEffect(() => {
   socket.on("remote-path", (item) => {
+    console.log("[RECV] Remote path item:", item);
     if (item.roomId !== roomId) return;
     const updatedPaths = [...pathsRef.current, item];
     pathsRef.current = updatedPaths;
@@ -123,6 +124,16 @@ const Canvas = () => {
       }
     } else {
       // handle freehand / shape / text as before
+      if (item.type === "freehand") {
+        drawBrushStroke(ctxRef.current, item.points, item.brushType, item.size, item.color);
+      } else if (item.type === "shape") {
+        drawShape(ctxRef.current, item.shapeType, item.start, item.end, item.color, item.size);
+      } else if (item.type === "text") {
+        const ctx = ctxRef.current;
+        ctx.font = `${item.size * 4}px sans-serif`;
+        ctx.fillStyle = item.color;
+        ctx.fillText(item.text, item.pos.x, item.pos.y);
+      }
     }
 
     setPaths(updatedPaths);
