@@ -148,6 +148,9 @@ const Canvas = () => {
     socket.on("flood-fill", ({ x, y, fillColor }) => {
       floodFill(x, y, fillColor, true);
     });
+    socket.on("disconnect", (reason) => {
+      console.log("Disconnected from server", reason);
+    });
     return () => {
       socket.off("flood-fill");
     };
