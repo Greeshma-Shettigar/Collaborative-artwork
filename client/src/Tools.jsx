@@ -23,23 +23,22 @@ const brushTypes = [
   { name: "Marker", icon: "🖍" },
   { name: "Oil", icon: "🛢" },
   { name: "Watercolor", icon: "💧" },
-  
 ];
 
 const shapeTypes = [
-  { name: "line", icon: <TbLine color="#007acc" /> },
-  { name: "circle", icon: <TbCircle color="#e67e22" /> },
-  { name: "rectangle", icon: <TbRectangle color="#3498db" /> },
-  { name: "triangle", icon: <TbTriangle color="#9b59b6" /> },
-  { name: "diamond", icon: <TbDiamond color="#e74c3c" /> },
-  { name: "pentagon", icon: <TbPentagon color="#1abc9c" /> },
-  { name: "hexagon", icon: <TbHexagon color="#f39c12" /> },
-  { name: "polygon", icon: <TbPolygon color="#2ecc71" /> },
-  { name: "arrow-right", icon: <FaArrowRight color="#34495e" /> },
-  { name: "arrow-left", icon: <FaArrowLeft color="#34495e" /> },
-  { name: "arrow-up", icon: <FaArrowUp color="#34495e" /> },
-  { name: "arrow-down", icon: <FaArrowDown color="#34495e" /> },
-  { name: "star", icon: <FaStar color="#f1c40f" /> },
+  { name: "line", icon: <TbLine color="#007acc" size={20} /> },
+  { name: "circle", icon: <TbCircle color="#e67e22" size={20} /> },
+  { name: "rectangle", icon: <TbRectangle color="#3498db" size={20} /> },
+  { name: "triangle", icon: <TbTriangle color="#9b59b6" size={20} /> },
+  { name: "diamond", icon: <TbDiamond color="#e74c3c" size={20} /> },
+  { name: "pentagon", icon: <TbPentagon color="#1abc9c" size={20} /> },
+  { name: "hexagon", icon: <TbHexagon color="#f39c12" size={20} /> },
+  { name: "polygon", icon: <TbPolygon color="#2ecc71" size={20} /> },
+  { name: "arrow-right", icon: <FaArrowRight color="#34495e" size={20} /> },
+  { name: "arrow-left", icon: <FaArrowLeft color="#34495e" size={20} /> },
+  { name: "arrow-up", icon: <FaArrowUp color="#34495e" size={20} /> },
+  { name: "arrow-down", icon: <FaArrowDown color="#34495e" size={20} /> },
+  { name: "star", icon: <FaStar color="#f1c40f" size={20} /> },
 ];
 
 const Tools = ({
@@ -83,24 +82,22 @@ const Tools = ({
     onToggleAIStyleTransferUI?.(false);
   };
 
-  const handleAIStyleTransferClick = () => {
-    onToggleAIStyleTransferUI?.();
-    setShowBrushDropdown(false);
-    setShowShapePanel(false);
-  };
-
   return (
     <>
       <div style={{
         display: "flex", position: "absolute", alignItems: "center",
-        padding: 10, gap: 8, background: "#ffe6e6", flexWrap: "wrap",
+        padding: 10, gap: 10, background: "#ffe6e6", flexWrap: "wrap",
         borderBottom: "1px solid #ccc", zIndex: 10, top: 0, left: 0, right: 0,
       }}>
-        <button onClick={() => onSelectTool("pencil")} title="Pencil"><FaPencilAlt color="#555" /></button>
+        <button onClick={() => onSelectTool("pencil")} title="Pencil" style={toolButtonStyle}>
+          <FaPencilAlt size={20} color="#555" />
+        </button>
 
         {/* Brush Dropdown */}
         <div style={{ position: "relative" }}>
-          <button onClick={toggleBrushDropdown} title="Brush"><FaPaintBrush color="#007acc" /></button>
+          <button onClick={toggleBrushDropdown} title="Brush" style={toolButtonStyle}>
+            <FaPaintBrush size={20} color="#007acc" />
+          </button>
           {showBrushDropdown && (
             <div style={{
               position: "absolute", top: "100%", left: 0, background: "white",
@@ -121,13 +118,15 @@ const Tools = ({
           )}
         </div>
 
-        <button onClick={() => onSelectTool("eraser")} title="Eraser"><FaEraser color="#d9534f" /></button>
-       
-        <button onClick={() => onSelectTool("fill")} title="Paint Fill"><FaFillDrip color="#f0ad4e" /></button>
+        <button onClick={() => onSelectTool("eraser")} title="Eraser" style={toolButtonStyle}>
+          <FaEraser size={20} color="#d9534f" />
+        </button>
 
         {/* Shapes Panel */}
         <div style={{ position: "relative" }}>
-          <button onClick={toggleShapePanel} title="Shapes"><IoShapesOutline /></button>
+          <button onClick={toggleShapePanel} title="Shapes" style={toolButtonStyle}>
+            <IoShapesOutline size={20} />
+          </button>
           {showShapePanel && (
             <div style={{
               position: "absolute", top: "100%", left: 0, background: "white",
@@ -137,7 +136,7 @@ const Tools = ({
             }}>
               {shapeTypes.map(shape => (
                 <div key={shape.name} title={shape.name} onClick={() => {
-                  onShapeSelect(shape.name); 
+                  onShapeSelect(shape.name);
                   onSelectTool("shape");
                   setShowShapePanel(false);
                 }} style={{
@@ -167,16 +166,20 @@ const Tools = ({
           value={color}
           onChange={(e) => onColorChange(e.target.value)}
           title="Color Picker"
-          style={{ width: "32px", height: "32px", border: "none", cursor: "pointer" }}
+          style={{
+            width: "36px",
+            height: "36px",
+            border: "1px solid #ccc",
+            borderRadius: "6px",
+            cursor: "pointer"
+          }}
         />
 
-        <button onClick={onUndo} title="Undo"><FaUndo /></button>
-        <button onClick={onRedo} title="Redo"><FaRedo /></button>
-       
+        <button onClick={onUndo} title="Undo" style={toolButtonStyle}><FaUndo size={20} /></button>
+        <button onClick={onRedo} title="Redo" style={toolButtonStyle}><FaRedo size={20} /></button>
 
         {/* AI Suggest Colors */}
         <button onClick={fetchSuggestedColors} style={buttonStyle}>🎨 AI Suggest Colors</button>
-
 
         {/* Display Suggested Colors */}
         {suggestedColors.length > 0 && (
@@ -207,20 +210,37 @@ const Tools = ({
       </div>
 
       {/* Chatbot Render */}
-      {showChatbot && <Chatbot visible={showChatbot} onClose={() => setShowChatbot(false)} />}
-      <ChatBot/>
-
+      {showChatbot && <ChatBot visible={showChatbot} onClose={() => setShowChatbot(false)} />}
+      <ChatBot />
     </>
   );
 };
 
+// 👇 Custom Styles
+const toolButtonStyle = {
+  width: "44px",
+  height: "44px",
+  background: "#f8f9fa",
+  border: "2px solid #ddd",
+  borderRadius: "10px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  fontSize: "20px",
+  transition: "all 0.2s ease-in-out",
+  boxShadow: "0 2px 5px rgba(0,0,0,0.05)",
+};
+
 const buttonStyle = {
-  padding: "6px 12px",
-borderRadius: "6px",
+ padding: "8px 14px",
+  borderRadius: "8px",
   border: "1px solid #ccc",
-  background: "#fff",
+  background: "#ffffff",
   cursor: "pointer",
   fontWeight: "bold",
+  fontSize: "14px",
+  transition: "background 0.2s, transform 0.2s",
 };
 
 export default Tools;
