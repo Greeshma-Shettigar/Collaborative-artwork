@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./LandingPage.css";
 import { useNavigate } from "react-router-dom";
 
@@ -15,56 +15,102 @@ export default function LandingPage() {
   const [authMode, setAuthMode] = useState("create");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
-  const [roomStep, setRoomStep] = useState(0); // 0 = hidden, 1 = choose, 2 = enter ID
+  const [roomStep, setRoomStep] = useState(0);
   const [roomId, setRoomId] = useState("");
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
+
+  const isMounted = useRef(false);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const handleStartDrawing = () => setRoomStep(1);
-  const handleJoinRoom = async () => {
-    setLoading(true);
-    if (roomId && name) {
-      try {
-        const res = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/join-room`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ roomId }), // only roomId needed
-          }
-        );
 
-        const data = await res.json();
+  const handleJoinRoom = async () => {
+    if (isMounted.current) setLoading(true);
+    if (!roomId || !name) {
+      alert("Please enter both your name and Room ID.");
+      if (isMounted.current) setLoading(false);
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Please login or create an account first.");
+      if (isMounted.current) setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/join-room`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ roomId }),
+        }
+      );
+
+      const data = await res.json();
+      if (isMounted.current) {
         if (res.ok) {
           navigate(`/canvas/${roomId}`, {
             state: { me: name },
           });
-          // you already have name
         } else {
-          alert(data.message); // shows "Room ID does not exist!"
+          alert(data.message);
         }
-      } catch (err) {
-        alert("Error joining room");
-      } finally {
-        setLoading(false);
       }
+    } catch (err) {
+      if (isMounted.current) {
+        alert("Error joining room. Please check your network connection.");
+        console.error("Join room failed:", err);
+      }
+    } finally {
+      if (isMounted.current) setLoading(false);
     }
   };
 
   const handleCreateRoom = async () => {
-    if (roomId && name) {
-      setLoading(true);
-      try {
-        const res = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/create-room`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, roomId }),
-          }
-        );
+    if (isMounted.current) setLoading(true);
+    if (!roomId || !name) {
+      alert("Please enter both your name and Room ID.");
+      if (isMounted.current) setLoading(false);
+      return;
+    }
 
-        const data = await res.json();
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Please login or create an account first.");
+      if (isMounted.current) setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/create-room`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ name, roomId }),
+        }
+      );
+
+      const data = await res.json();
+      if (isMounted.current) {
         if (res.ok) {
           const link = `${window.location.origin}/canvas/${roomId}`;
           setShareableLink(link);
@@ -73,18 +119,110 @@ export default function LandingPage() {
         } else {
           alert(data.message);
         }
-      } catch (err) {
-        console.error(err);
-        alert("Error creating room");
-      } finally {
-        setLoading(false);
       }
+    } catch (err) {
+      if (isMounted.current) {
+        console.error("Create room failed:", err);
+        alert("Error creating room. Please check your network connection.");
+      }
+    } finally {
+      if (isMounted.current) setLoading(false);
     }
   };
 
   const handleAuthClick = (mode) => {
     setAuthMode(mode);
     setShowAuthModal(true);
+  };
+
+  const handleLogout = async () => {
+    if (isMounted.current) setLogoutLoading(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/logout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      if (res.ok) {
+        alert('Logged out successfully');
+      } else {
+        const errorData = await res.json();
+        alert(errorData.message || 'Logout failed: An unexpected error occurred.');
+        console.error('Logout failed with status:', res.status, errorData);
+      }
+    } catch (err) {
+      console.error('Logout failed:', err);
+      alert('Server error during logout: Could not connect to the server.');
+    } finally {
+      localStorage.removeItem('token');
+      if (isMounted.current) setLogoutLoading(false);
+      window.location.reload();
+    }
+  };
+
+  const handleCreateAccount = async () => {
+    if (isMounted.current) setAuthLoading(true);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/register`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: name, password }),
+        }
+      );
+      const data = await res.json();
+      if (isMounted.current) {
+        if (res.ok) {
+          alert(data.message || "Account created!");
+          closeModals();
+        } else {
+          alert(data.message || "Registration failed");
+        }
+      }
+    } catch (err) {
+      if (isMounted.current) {
+        alert("Server error during registration.");
+        console.error("Registration error:", err);
+      }
+    } finally {
+      if (isMounted.current) setAuthLoading(false);
+    }
+  };
+
+  const handleLogin = async () => {
+    if (isMounted.current) setAuthLoading(true);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/login`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: name, password }),
+        }
+      );
+      const data = await res.json();
+      if (isMounted.current) {
+        if (res.ok) {
+          console.log(data)
+          localStorage.setItem("token", data.token);
+          alert(data.message || "Logged in successfully");
+          closeModals();
+        } else {
+          alert(data.message || "Invalid login");
+        }
+      }
+    } catch (err) {
+      if (isMounted.current) {
+        alert("Server error during login.");
+        console.error("Login error:", err);
+      }
+    } finally {
+      if (isMounted.current) setAuthLoading(false);
+    }
   };
 
   const closeModals = () => {
@@ -100,10 +238,15 @@ export default function LandingPage() {
       <div className="header">
         <div className="logo">CoArtistry</div>
         <div className="auth-buttons">
-          <button onClick={() => handleAuthClick("create")}>
-            Create Account
-          </button>
-          <button onClick={() => handleAuthClick("login")}>Login</button>
+         {!localStorage.getItem("token")&&<button onClick={() => handleAuthClick("create")} disabled={authLoading || logoutLoading}>
+            {authLoading && authMode === "create" ? "Creating Account..." : "Create Account"}
+          </button>} 
+         {!localStorage.getItem("token")&&<button onClick={() => handleAuthClick("login")} disabled={authLoading || logoutLoading}>
+            {authLoading && authMode === "login" ? "Logging In..." : "Login"}
+          </button>} 
+          {localStorage.getItem("token")&&<button onClick={handleLogout} disabled={logoutLoading || authLoading}>
+            {logoutLoading ? "Logging Out..." : "Logout"}
+          </button>}
         </div>
       </div>
 
@@ -117,7 +260,6 @@ export default function LandingPage() {
         </button>
       </div>
 
-      {/* IMAGE SECTIONS */}
       <div className="info-section red">
         <img src={art1} alt="Red Palette" />
         <div className="text">
@@ -165,75 +307,37 @@ export default function LandingPage() {
               placeholder="Enter your name"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              disabled={authLoading}
             />
             <input
               type="password"
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={authLoading}
             />
             <div className="modal-actions">
               {authMode === "create" ? (
                 <button
-                  onClick={async () => {
-                    try {
-                      const res = await fetch(
-                        `${import.meta.env.VITE_BACKEND_URL}/register`,
-                        {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ username: name, password }),
-                        }
-                      );
-                      const data = await res.json();
-                      if (res.ok) {
-                        alert(data.message || "Account created!");
-                        closeModals();
-                      } else {
-                        alert(data.message || "Registration failed");
-                      }
-                    } catch (err) {
-                      alert("Server error during registration");
-                    }
-                  }}
+                  onClick={handleCreateAccount}
+                  disabled={authLoading}
                 >
-                  Create Account
+                  {authLoading ? "Creating Account..." : "Create Account"}
                 </button>
               ) : (
                 <button
-                  onClick={async () => {
-                    try {
-                      const res = await fetch(
-                        `${import.meta.env.VITE_BACKEND_URL}/login`,
-                        {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ username: name, password }),
-                        }
-                      );
-                      const data = await res.json();
-                      if (res.ok) {
-                        alert(data.message || "Logged in successfully");
-                        closeModals();
-                      } else {
-                        alert(data.message || "Invalid login");
-                      }
-                    } catch (err) {
-                      alert("Server error during login");
-                    }
-                  }}
+                  onClick={handleLogin}
+                  disabled={authLoading}
                 >
-                  Login
+                  {authLoading ? "Logging In..." : "Login"}
                 </button>
               )}
-
-              <button onClick={closeModals}>Close</button>
+              <button onClick={closeModals} disabled={authLoading}>Close</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ROOM JOIN/CREATE */}
       {roomStep === 1 && (
         <div className="modal" onClick={closeModals}>
           <div
@@ -242,8 +346,8 @@ export default function LandingPage() {
           >
             <h2>Join or Create Room</h2>
             <div className="room-buttons">
-              <button onClick={() => setRoomStep(2)}>Join Room </button>
-              <button onClick={() => setRoomStep(3)}>Create Room</button>
+              <button onClick={() => setRoomStep(2)} disabled={loading}>Join Room </button>
+              <button onClick={() => setRoomStep(3)} disabled={loading}>Create Room</button>
             </div>
           </div>
         </div>
@@ -260,15 +364,18 @@ export default function LandingPage() {
               placeholder="Enter your name"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              disabled={loading}
             />
             <input
               type="text"
               placeholder="Enter Room ID"
               value={roomId}
               onChange={(e) => setRoomId(e.target.value)}
+              disabled={loading}
             />
             <button
               onClick={roomStep === 2 ? handleJoinRoom : handleCreateRoom}
+              disabled={loading}
             >
               {roomStep === 2
                 ? loading
@@ -281,6 +388,7 @@ export default function LandingPage() {
           </div>
         </div>
       )}
+
       {showLinkModal && (
         <div className="modal" onClick={(e) => e.stopPropagation()}>
           <div className="modal-content white-bg">
@@ -294,7 +402,12 @@ export default function LandingPage() {
             />
             <button
               onClick={() => {
-                navigator.clipboard.writeText(shareableLink);
+                const el = document.createElement('textarea');
+                el.value = shareableLink;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
                 alert("Link copied to clipboard!");
               }}
               style={{ marginTop: "15px", padding: "10px 20px" }}
@@ -305,7 +418,7 @@ export default function LandingPage() {
               <button
                 onClick={() => {
                   setShowLinkModal(false);
-                  navigate(`/canvas/${roomId}`); // Navigate after short delay
+                  navigate(`/canvas/${roomId}`);
                 }}
                 style={{ marginTop: "15px", padding: "10px 20px" }}
               >

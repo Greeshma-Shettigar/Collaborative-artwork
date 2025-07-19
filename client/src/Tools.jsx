@@ -1,7 +1,11 @@
 import React, { useState } from "react";
 import { getColorPalette } from './utils/colorAPI';
-import socket from "./socket";
+//import socket from "./socket";
+import { createSocket } from "./socket";
+
 import ChatBot from "../public/ChatBot Widget/ChatBot";
+import { FaTimes } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 import {
   FaPencilAlt, FaFillDrip, FaEraser, FaFont,
@@ -62,11 +66,23 @@ const Tools = ({
   const [showShapePanel, setShowShapePanel] = useState(false);
   const [suggestedColors, setSuggestedColors] = useState([]);
   const [showChatbot, setShowChatbot] = useState(false);
+  const [colorsLoading, setColorsLoading] = useState(false);
+ const token = localStorage.getItem("token");
+  const socket = createSocket(token);
 
-  const fetchSuggestedColors = async () => {
+const fetchSuggestedColors = async () => {
+  setColorsLoading(true); // Start loading
+  try {
     const palette = await getColorPalette();
     setSuggestedColors(palette);
-  };
+  } catch (error) {
+    console.error("Failed to fetch colors:", error);
+  } finally {
+    setColorsLoading(false); // End loading
+  }
+};
+
+  
 
   const toggleBrushDropdown = () => {
     onSelectTool("brush");
@@ -82,6 +98,15 @@ const Tools = ({
     onToggleAIStyleTransferUI?.(false);
   };
 
+  
+  const navigate = useNavigate(); // ✅ Correct usage — inside component
+
+  const handleClose = () => {
+    const confirmQuit = window.confirm("Are you sure you want to quit?");
+    if (confirmQuit) {
+      navigate("/");
+    }
+  };
   return (
     <>
       <div style={{
@@ -89,6 +114,7 @@ const Tools = ({
         padding: 10, gap: 10, background: "#ffe6e6", flexWrap: "wrap",
         borderBottom: "1px solid #ccc", zIndex: 10, top: 0, left: 0, right: 0,
       }}>
+         
         <button onClick={() => onSelectTool("pencil")} title="Pencil" style={toolButtonStyle}>
           <FaPencilAlt size={20} color="#555" />
         </button>
@@ -179,7 +205,7 @@ const Tools = ({
         <button onClick={onRedo} title="Redo" style={toolButtonStyle}><FaRedo size={20} /></button>
 
         {/* AI Suggest Colors */}
-        <button onClick={fetchSuggestedColors} style={buttonStyle}>🎨 AI Suggest Colors</button>
+        <button onClick={fetchSuggestedColors} style={buttonStyle}  disabled={colorsLoading}> {colorsLoading ? "Fetching Colors..." : "🎨 AI Suggest Colors"}</button>
 
         {/* Display Suggested Colors */}
         {suggestedColors.length > 0 && (
@@ -207,8 +233,13 @@ const Tools = ({
             })}
           </div>
         )}
+        <div style={{ marginLeft: "auto" }}>
+        <button onClick={handleClose} title="Close" style={toolButtonStyle}>
+          <FaTimes size={20} color="#d9534f" />
+        </button>
       </div>
-
+      </div>
+      
       {/* Chatbot Render */}
       {showChatbot && <ChatBot visible={showChatbot} onClose={() => setShowChatbot(false)} />}
       <ChatBot />
